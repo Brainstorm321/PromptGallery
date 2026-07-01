@@ -13,6 +13,23 @@
   const imgEl = document.getElementById("detailImage");
   const toast = document.getElementById("toast");
   const backToGallery = document.getElementById("backToGallery");
+  const i18n = window.PromptGalleryI18N || {};
+
+  function tr(key, vars) {
+    return i18n.t ? i18n.t(key, vars) : key;
+  }
+
+  function term(group, value) {
+    return i18n.term ? i18n.term(group, value) : (value || "");
+  }
+
+  function promptTitle(item) {
+    return i18n.promptTitle ? i18n.promptTitle(item) : (item.title || "Untitled");
+  }
+
+  function promptText(item) {
+    return i18n.promptText ? i18n.promptText(item) : (item.prompt || "");
+  }
 
   function showToast(msg) {
     if (!toast) return;
@@ -67,8 +84,8 @@
   }
 
   function getCopyValue(item) {
-    const promptText = (item.prompt || "").toString().trim();
-    if (promptText && !promptText.includes("TODO")) return promptText;
+    const promptValue = promptText(item).toString().trim();
+    if (promptValue && !promptValue.includes("TODO")) return promptValue;
     return (item.originalUrl || "").toString().trim();
   }
 
@@ -142,8 +159,9 @@
     setCopyEnabled(!isPremium && hasCopyText);
 
     if (copyBtn) {
-      copyBtn.textContent = isPremium ? "Private" : "Copy";
-      copyBtn.title = isPremium ? "Premium prompt is private" : "Copy prompt";
+      copyBtn.dataset.privateState = isPremium ? "true" : "";
+      copyBtn.textContent = isPremium ? tr("detail.private") : tr("detail.copy");
+      copyBtn.title = isPremium ? tr("gallery.premiumPrivate") : tr("gallery.copyPrompt");
     }
 
     if (downloadBtn) {
@@ -179,33 +197,34 @@
   const item = list.find(p => String(p.id) === String(id));
 
   if (!item) {
-    if (titleEl) titleEl.textContent = "Prompt not found";
+    if (titleEl) titleEl.textContent = tr("detail.notFound");
     setCopyEnabled(false);
     setVisible(downloadBtn, false);
     setVisible(viewOriginalBtn, false);
     return;
   }
 
-  const title = item.title || "Untitled";
-  const author = item.creator || item.author || "@unknown";
-  const type = item.type || "Image";
-  const access = item.access || "Free";
-  const tags = Array.isArray(item.tags) ? item.tags : [];
-  const originalUrl = (item.originalUrl || "").toString();
-  const isPremium = access.toLowerCase() === "premium";
-  const copyValue = getCopyValue(item);
-  const displayText = isPremium
-    ? "Premium prompt is private. Use View Original if you have access."
-    : copyValue;
+  function renderDetail() {
+    const title = promptTitle(item);
+    const author = item.creator || item.author || "@unknown";
+    const type = item.type || "Image";
+    const access = item.access || "Free";
+    const tags = Array.isArray(item.tags) ? item.tags : [];
+    const originalUrl = (item.originalUrl || "").toString();
+    const isPremium = access.toLowerCase() === "premium";
+    const copyValue = getCopyValue(item);
+    const displayText = isPremium ? tr("detail.privateMessage") : copyValue;
 
-  if (titleEl) titleEl.textContent = title;
-  if (authorEl) authorEl.textContent = author;
-  if (metaEl) metaEl.textContent = `${type} - ${access}`;
-  if (tagsEl) tagsEl.innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join("");
-  if (imgEl) { imgEl.src = item.image || ""; imgEl.alt = title; }
-  if (promptEl) promptEl.value = displayText;
+    if (titleEl) titleEl.textContent = title;
+    if (authorEl) authorEl.textContent = author;
+    if (metaEl) metaEl.textContent = `${term("type", type)} · ${term("access", access)}`;
+    if (tagsEl) tagsEl.innerHTML = tags.map(t => `<span class="tag">${term("tag", t)}</span>`).join("");
+    if (imgEl) { imgEl.src = item.image || ""; imgEl.alt = title; }
+    if (promptEl) promptEl.value = displayText;
 
-  updateButtons(item, displayText, originalUrl);
+    updateButtons(item, displayText, originalUrl);
+    if (i18n.applyStatic) i18n.applyStatic();
+  }
 
   if (backToGallery) {
     backToGallery.addEventListener("click", event => {
@@ -221,17 +240,17 @@
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
       playButtonFeedback(copyBtn);
-      if (isPremium) {
-        showToast("Premium prompt is private.");
+      if ((item.access || "").toLowerCase() === "premium") {
+        showToast(tr("toast.premiumPrivate"));
         return;
       }
-      const current = promptEl?.value || copyValue;
+      const current = promptEl?.value || getCopyValue(item);
       if (!current.trim()) {
-        showToast("No prompt to copy.");
+        showToast(tr("toast.noPrompt"));
         return;
       }
       const ok = await copyText(current);
-      showToast(ok ? "Copied!" : "Copy failed.");
+      showToast(ok ? tr("toast.copied") : tr("toast.copyFailed"));
     });
   }
 
@@ -242,15 +261,15 @@
       playButtonFeedback(downloadBtn);
       const src = item.image || (imgEl ? imgEl.src : "");
       if (!src) {
-        showToast("No image to download.");
+        showToast(tr("toast.noImage"));
         return;
       }
       try {
-        const filename = `${safeFileName(title, "prompt-image")}.${getImageExtension(src)}`;
+        const filename = `${safeFileName(item.title, "prompt-image")}.${getImageExtension(src)}`;
         downloadImageFile(src, filename);
-        showToast("Download started.");
+        showToast(tr("toast.downloadStarted"));
       } catch (err) {
-        showToast("Download failed.");
+        showToast(tr("toast.downloadFailed"));
       }
     });
   }
@@ -260,4 +279,7 @@
       playButtonFeedback(viewOriginalBtn);
     });
   }
+
+  window.addEventListener("prompt-gallery-language-change", renderDetail);
+  renderDetail();
 })();

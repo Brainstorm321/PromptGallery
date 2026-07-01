@@ -13,6 +13,19 @@
   const ITEMS_PER_PAGE = 8;
   const TOTAL_PAGES = 10;
   let currentPage = 1;
+  const i18n = window.PromptGalleryI18N || {};
+
+  function tr(key, vars) {
+    return i18n.t ? i18n.t(key, vars) : key;
+  }
+
+  function term(group, value) {
+    return i18n.term ? i18n.term(group, value) : (value || '');
+  }
+
+  function promptTitle(p) {
+    return i18n.promptTitle ? i18n.promptTitle(p) : (p.title || 'Untitled');
+  }
 
   function getSelectedValue(name) {
     const el = document.querySelector(`input[name="${name}"]:checked`);
@@ -33,8 +46,8 @@
 
     if(!q) return true;
     const hay = [
-      p.title, p.subtitle, p.author, p.creator, p.model, p.category,
-      ...(p.tags || [])
+      p.title, p.titleZh, promptTitle(p), p.subtitle, p.author, p.creator, p.model, p.category, term('category', p.category),
+      ...(p.tags || []), ...(p.tags || []).map(tag => term('tag', tag))
     ].join(' ').toLowerCase();
     return hay.includes(q);
   }
@@ -62,13 +75,13 @@
 
   function cardHTML(p){
     const tagPills = (p.tags || []).slice(0, 5).map(t => (
-      `<span class="text-xs px-2 py-1 rounded-full bg-gray-700/60 text-gray-200 border border-gray-600/60">${escapeHtml(t)}</span>`
+      `<span class="text-xs px-2 py-1 rounded-full bg-gray-700/60 text-gray-200 border border-gray-600/60">${escapeHtml(term('tag', t))}</span>`
     )).join('');
     const isPremium = (p.access || '').toLowerCase() === 'premium';
     const accessBadge = isPremium
-      ? `<span class="text-sm font-semibold text-yellow-400">Premium</span>`
-      : `<span class="text-sm font-semibold text-green-400">Free</span>`;
-    const copyTitle = isPremium ? 'Premium prompt is private' : 'Copy prompt';
+      ? `<span class="text-sm font-semibold text-yellow-400">${escapeHtml(term('access', 'premium'))}</span>`
+      : `<span class="text-sm font-semibold text-green-400">${escapeHtml(term('access', 'free'))}</span>`;
+    const copyTitle = isPremium ? tr('gallery.premiumPrivate') : tr('gallery.copyPrompt');
 
     const imageFitClass = p.category === 'portrait'
       ? 'object-cover object-top'
@@ -77,10 +90,10 @@
     return `
       <div class="group block bg-gray-800/60 hover:bg-gray-800 rounded-2xl overflow-hidden border border-gray-700/70 transition relative w-full">
         <div class="relative overflow-hidden bg-gray-950/50" style="aspect-ratio: 4 / 3;">
-          <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="w-full h-full ${imageFitClass} transition duration-300"/>
+          <img src="${escapeHtml(p.image)}" alt="${escapeHtml(promptTitle(p))}" class="w-full h-full ${imageFitClass} transition duration-300"/>
 
           <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-6">
-            <a href="detail.html?id=${encodeURIComponent(p.id)}" class="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center text-gray-900 hover:bg-blue-500 hover:text-white transition shadow-lg" title="View details">
+            <a href="detail.html?id=${encodeURIComponent(p.id)}" class="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center text-gray-900 hover:bg-blue-500 hover:text-white transition shadow-lg" title="${escapeHtml(tr('gallery.viewDetails'))}">
               <i class="bi bi-eye-fill text-xl"></i>
             </a>
             <button class="copy-btn w-12 h-12 bg-white/90 rounded-full flex items-center justify-center text-gray-900 hover:bg-green-500 hover:text-white transition shadow-lg"
@@ -91,10 +104,10 @@
         </div>
 
         <div class="p-5">
-          <div class="text-xl font-bold mb-2">${escapeHtml(p.title)}</div>
+          <div class="text-xl font-bold mb-2">${escapeHtml(promptTitle(p))}</div>
           <div class="flex flex-wrap gap-2 mb-4">${tagPills}</div>
           <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-300">Category: <span class="text-gray-100 font-semibold">${escapeHtml(p.category)}</span></div>
+            <div class="text-sm text-gray-300">${escapeHtml(tr('gallery.category'))} <span class="text-gray-100 font-semibold">${escapeHtml(term('category', p.category))}</span></div>
             ${accessBadge}
           </div>
         </div>
@@ -107,14 +120,14 @@
 
   function emptyPageHTML(totalMatches) {
     const message = totalMatches
-      ? `Page ${currentPage} is empty for now.`
-      : 'No prompts match the current filters.';
+      ? tr('gallery.emptyPage', { page: currentPage })
+      : tr('gallery.noMatches');
 
     return `
       <div class="flex items-center justify-center rounded-2xl border border-gray-700 text-center px-6" style="grid-column: 1 / -1; min-height: 320px; border-style: dashed; background: rgba(17, 24, 39, 0.4);">
         <div>
           <div class="text-xl font-semibold text-gray-100 mb-2">${message}</div>
-          <div class="text-sm text-gray-400">New prompt cards will appear here when they are added.</div>
+          <div class="text-sm text-gray-400">${tr('gallery.emptyHint')}</div>
         </div>
       </div>`;
   }
@@ -290,22 +303,22 @@
 
         const item = PROMPTS.find(p => String(p.id) === String(btn.dataset.id));
         if (!item) {
-          showToast('Prompt not found.');
+          showToast(tr('toast.promptNotFound'));
           return;
         }
         if ((item.access || '').toLowerCase() === 'premium') {
-          showToast('Premium prompt is private.');
+          showToast(tr('toast.premiumPrivate'));
           return;
         }
 
         const value = getCopyValue(item);
         if (!value) {
-          showToast('No prompt to copy.');
+          showToast(tr('toast.noPrompt'));
           return;
         }
 
         const ok = await copyText(value);
-        showToast(ok ? 'Copied!' : 'Copy failed.');
+        showToast(ok ? tr('toast.copied') : tr('toast.copyFailed'));
       }, { once: true });
     });
   }
@@ -325,6 +338,8 @@
   if (backToFirstPageBtn) {
     backToFirstPageBtn.addEventListener('click', () => goToPage(1));
   }
+
+  window.addEventListener('prompt-gallery-language-change', render);
 
   render();
 })();
