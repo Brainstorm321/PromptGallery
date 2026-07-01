@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Prompt Library - AI Prompt Gallery</title>
+<link href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;✨&lt;/text&gt;&lt;/svg&gt;" rel="icon"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="css/style.css" rel="stylesheet"/>
+<style>
+  .hero-neon {
+    isolation: isolate;
+    background:
+      radial-gradient(ellipse at 18% 86%, rgba(8, 145, 178, 0.34), transparent 34%),
+      radial-gradient(ellipse at 86% 22%, rgba(124, 58, 237, 0.28), transparent 36%),
+      radial-gradient(ellipse at 48% 52%, rgba(37, 99, 235, 0.18), transparent 46%),
+      linear-gradient(135deg, #020817 0%, #071832 42%, #1c123d 100%);
+  }
+
+  .hero-aurora {
+    background:
+      radial-gradient(ellipse at 20% 78%, rgba(14, 165, 233, 0.2), transparent 38%),
+      radial-gradient(ellipse at 76% 72%, rgba(99, 102, 241, 0.22), transparent 42%),
+      radial-gradient(ellipse at 54% 16%, rgba(168, 85, 247, 0.14), transparent 34%);
+    animation: heroAuroraBreathe 16s ease-in-out infinite alternate;
+  }
+
+  .hero-starfield {
+    background:
+      radial-gradient(circle at 9% 22%, rgba(191, 219, 254, 0.86) 0 1px, transparent 2px),
+      radial-gradient(circle at 18% 63%, rgba(56, 189, 248, 0.72) 0 1.6px, transparent 3.6px),
+      radial-gradient(circle at 31% 18%, rgba(255, 255, 255, 0.72) 0 0.8px, transparent 2px),
+      radial-gradient(circle at 46% 74%, rgba(147, 197, 253, 0.76) 0 2.2px, transparent 4.8px),
+      radial-gradient(circle at 61% 24%, rgba(216, 180, 254, 0.78) 0 1.3px, transparent 3.2px),
+      radial-gradient(circle at 73% 58%, rgba(125, 211, 252, 0.86) 0 0.9px, transparent 2.4px),
+      radial-gradient(circle at 88% 30%, rgba(255, 255, 255, 0.78) 0 1.8px, transparent 4px),
+      radial-gradient(circle at 82% 66%, rgba(96, 165, 250, 0.7) 0 2.8px, transparent 6px);
+    animation: heroStarfieldTwinkle 6s ease-in-out infinite alternate;
+  }
+
+  .hero-wave-svg {
+    opacity: 0.96;
+    mix-blend-mode: screen;
+  }
+
+  .hero-flow-ribbon {
+    transform-origin: 50% 66%;
+    animation: heroRibbonDrift 14s ease-in-out infinite alternate;
+  }
+
+  .hero-wave-sheet {
+    transform-origin: 50% 64%;
+    animation: heroRibbonDrift 18s ease-in-out infinite alternate;
+  }
+
+  .hero-flow-line {
+    stroke-dasharray: 170 510;
+    animation: heroLightFlow 8s linear infinite;
+  }
+
+  .hero-flow-line-slow {
+    stroke-dasharray: 260 620;
+    animation-duration: 12s;
+  }
+
+  .hero-comet {
+    stroke-dasharray: 82 780;
+    animation: heroCometGlide 9s ease-in-out infinite;
+  }
+
+  .hero-star {
+    transform-origin: center;
+    animation: heroStarPulse 4.8s ease-in-out infinite alternate;
+  }
+
+  .hero-starburst {
+    stroke-linecap: round;
+    transform-origin: center;
+    animation: heroStarPulse 5.8s ease-in-out infinite alternate;
+  }
+
+  .hero-star:nth-of-type(2n) {
+    animation-duration: 6.4s;
+  }
+
+  @keyframes heroAuroraBreathe {
+    from { transform: translate3d(-1%, 0, 0) scale(1.02); opacity: 0.7; }
+    to { transform: translate3d(1.5%, -1%, 0) scale(1.06); opacity: 0.95; }
+  }
+
+  @keyframes heroRibbonDrift {
+    from { transform: translate3d(-1.2%, 1.2%, 0) skewX(-1deg) scale(1.01); opacity: 0.58; }
+    to { transform: translate3d(1.5%, -1.1%, 0) skewX(1.2deg) scale(1.045); opacity: 0.92; }
+  }
+
+  @keyframes heroLightFlow {
+    from { stroke-dashoffset: 0; opacity: 0.28; }
+    45% { opacity: 0.9; }
+    to { stroke-dashoffset: -600; opacity: 0.34; }
+  }
+
+  @keyframes heroCometGlide {
+    from { stroke-dashoffset: 340; opacity: 0; }
+    25% { opacity: 0.9; }
+    70% { opacity: 0.18; }
+    to { stroke-dashoffset: -720; opacity: 0; }
+  }
+
+  @keyframes heroStarPulse {
+    from { opacity: 0.22; transform: scale(0.72); }
+    50% { opacity: 1; }
+    to { opacity: 0.42; transform: scale(1.22); }
+  }
+
+  @keyframes heroStarfieldTwinkle {
+    from { opacity: 0.34; transform: translate3d(0, 0, 0); }
+    to { opacity: 0.82; transform: translate3d(0, -8px, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-aurora,
+    .hero-starfield,
+    .hero-flow-ribbon,
+    .hero-wave-sheet,
+    .hero-flow-line,
+    .hero-comet,
+    .hero-star,
+    .hero-starburst {
+      animation: none;
+    }
+  }
+</style>
+</head>
+<body class="antialiased">
+<!-- Hero Section -->
+<header class="hero-neon relative overflow-hidden pt-24 pb-32 md:pt-40 md:pb-48 bg-gray-900 border">
+<div class="hero-aurora absolute inset-0 pointer-events-none"></div>
+<div class="hero-starfield absolute inset-0 pointer-events-none"></div>
+<svg aria-hidden="true" class="hero-wave-svg absolute inset-0 pointer-events-none" preserveaspectratio="none" viewbox="0 0 1440 760" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="heroRibbonBlue" x1="-160" x2="1600" y1="660" y2="430">
+<stop offset="0" stop-color="#0f172a" stop-opacity="0.04"></stop>
+<stop offset="0.16" stop-color="#0284c7" stop-opacity="0.44"></stop>
+<stop offset="0.34" stop-color="#22d3ee" stop-opacity="0.82"></stop>
+<stop offset="0.52" stop-color="#1d4ed8" stop-opacity="0.64"></stop>
+<stop offset="0.7" stop-color="#38bdf8" stop-opacity="0.92"></stop>
+<stop offset="0.86" stop-color="#7c3aed" stop-opacity="0.48"></stop>
+<stop offset="1" stop-color="#312e81" stop-opacity="0.02"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="heroRibbonViolet" x1="-80" x2="1480" y1="720" y2="380">
+<stop offset="0" stop-color="#1d4ed8" stop-opacity="0.02"></stop>
+<stop offset="0.22" stop-color="#2563eb" stop-opacity="0.24"></stop>
+<stop offset="0.48" stop-color="#38bdf8" stop-opacity="0.44"></stop>
+<stop offset="0.68" stop-color="#3b82f6" stop-opacity="0.7"></stop>
+<stop offset="0.88" stop-color="#a855f7" stop-opacity="0.56"></stop>
+<stop offset="1" stop-color="#7e22ce" stop-opacity="0.03"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="heroRibbonGlass" x1="-130" x2="1500" y1="590" y2="540">
+<stop offset="0" stop-color="#38bdf8" stop-opacity="0.04"></stop>
+<stop offset="0.28" stop-color="#0ea5e9" stop-opacity="0.3"></stop>
+<stop offset="0.54" stop-color="#67e8f9" stop-opacity="0.68"></stop>
+<stop offset="0.78" stop-color="#2563eb" stop-opacity="0.28"></stop>
+<stop offset="1" stop-color="#a855f7" stop-opacity="0.03"></stop>
+</lineargradient>
+<filter color-interpolation-filters="sRGB" height="220%" id="heroGlow" width="220%" x="-60%" y="-60%">
+<fegaussianblur result="blur" stddeviation="8"></fegaussianblur>
+<fecolormatrix in="blur" result="glow" type="matrix" values="0 0 0 0 0.08 0 0 0 0 0.56 0 0 0 0 1 0 0 0 0.8 0"></fecolormatrix>
+<femerge>
+<femergenode in="glow"></femergenode>
+<femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+</defs>
+<g class="hero-wave-sheet" opacity="0.52">
+<path d="M-160 668 C 46 598, 190 520, 322 418 C 425 338, 518 352, 612 476 C 724 624, 862 638, 1020 544 C 1178 450, 1308 396, 1600 360 L1600 610 C 1298 548, 1162 580, 1004 644 C 794 728, 642 710, 470 602 C 280 482, 100 562, -160 742 Z" fill="url(#heroRibbonBlue)" opacity="0.36"></path>
+<path d="M-140 735 C 140 590, 306 575, 478 638 C 650 704, 795 678, 948 590 C 1112 496, 1264 430, 1580 455 L1580 548 C 1268 518, 1138 572, 980 657 C 796 754, 620 760, 430 688 C 252 620, 68 676, -140 760 Z" fill="url(#heroRibbonViolet)" opacity="0.32"></path>
+</g>
+<g class="hero-flow-ribbon" filter="url(#heroGlow)">
+<path d="M-135 640 C 85 515, 242 430, 372 512 C 526 610, 638 672, 820 618 C 1010 562, 1138 438, 1600 448" fill="none" opacity="0.66" stroke="url(#heroRibbonBlue)" stroke-linecap="round" stroke-width="19"></path>
+<path d="M-120 705 C 72 610, 226 584, 388 642 C 555 702, 724 706, 885 630 C 1068 544, 1218 454, 1575 470" fill="none" opacity="0.48" stroke="url(#heroRibbonViolet)" stroke-linecap="round" stroke-width="10"></path>
+<path d="M-90 555 C 120 484, 276 406, 430 488 C 596 576, 756 606, 930 544 C 1098 484, 1228 388, 1560 338" fill="none" opacity="0.64" stroke="url(#heroRibbonGlass)" stroke-linecap="round" stroke-width="7"></path>
+<path d="M-90 590 C 128 535, 292 508, 426 574 C 584 652, 718 654, 878 574 C 1045 490, 1230 366, 1515 292" fill="none" opacity="0.44" stroke="#38bdf8" stroke-linecap="round" stroke-width="3.4"></path>
+<path d="M 36 728 C 224 638, 392 596, 575 615 C 742 632, 860 600, 1016 526 C 1165 456, 1308 436, 1502 470" fill="none" opacity="0.34" stroke="#818cf8" stroke-linecap="round" stroke-width="2"></path>
+<path d="M 202 404 C 384 510, 520 548, 684 520 C 838 493, 1032 398, 1285 226" fill="none" opacity="0.28" stroke="#0ea5e9" stroke-linecap="round" stroke-width="1.4"></path>
+</g>
+<path class="hero-flow-line hero-flow-line-slow" d="M-135 640 C 85 515, 242 430, 372 512 C 526 610, 638 672, 820 618 C 1010 562, 1138 438, 1600 448" fill="none" stroke="#67e8f9" stroke-linecap="round" stroke-width="2.8"></path>
+<path class="hero-flow-line" d="M-90 555 C 120 484, 276 406, 430 488 C 596 576, 756 606, 930 544 C 1098 484, 1228 388, 1560 338" fill="none" stroke="#67e8f9" stroke-linecap="round" stroke-width="2.1" style="animation-delay: -1.4s;"></path>
+<path class="hero-flow-line" d="M-120 705 C 72 610, 226 584, 388 642 C 555 702, 724 706, 885 630 C 1068 544, 1218 454, 1575 470" fill="none" stroke="#60a5fa" stroke-linecap="round" stroke-width="1.8" style="animation-delay: -2.8s;"></path>
+<path class="hero-flow-line" d="M-60 682 C 150 570, 335 518, 506 564 C 714 620, 835 594, 1006 506 C 1188 412, 1345 360, 1528 394" fill="none" opacity="0.78" stroke="#22d3ee" stroke-linecap="round" stroke-width="1.4" style="animation-delay: -5.2s;"></path>
+<path class="hero-flow-line hero-flow-line-slow" d="M 22 745 C 246 628, 492 610, 692 650 C 872 686, 1044 590, 1210 480 C 1340 394, 1448 342, 1580 320" fill="none" opacity="0.62" stroke="#a78bfa" stroke-linecap="round" stroke-width="1.5" style="animation-delay: -6.4s;"></path>
+<path class="hero-comet" d="M 110 194 C 298 318, 492 356, 704 300 C 896 248, 1090 160, 1362 86" fill="none" stroke="#38bdf8" stroke-linecap="round" stroke-width="1.9"></path>
+<path class="hero-comet" d="M 180 382 C 426 464, 654 458, 884 350 C 1078 258, 1240 164, 1460 92" fill="none" opacity="0.64" stroke="#8b5cf6" stroke-linecap="round" stroke-width="1.6" style="animation-delay: -4s;"></path>
+<path class="hero-comet" d="M 820 620 C 992 506, 1122 454, 1295 450 C 1412 448, 1510 478, 1600 525" fill="none" opacity="0.74" stroke="#67e8f9" stroke-linecap="round" stroke-width="2.2" style="animation-delay: -6.8s;"></path>
+<g filter="url(#heroGlow)">
+<circle class="hero-star" cx="150" cy="198" fill="#93c5fd" r="1.3"></circle>
+<circle class="hero-star" cx="278" cy="356" fill="#ffffff" r="0.8" style="animation-delay: -1.2s;"></circle>
+<circle class="hero-star" cx="412" cy="162" fill="#38bdf8" r="2.1" style="animation-delay: -2.4s;"></circle>
+<circle class="hero-star" cx="602" cy="244" fill="#bfdbfe" r="1" style="animation-delay: -3.1s;"></circle>
+<circle class="hero-star" cx="782" cy="122" fill="#c084fc" r="2.4" style="animation-delay: -0.8s;"></circle>
+<circle class="hero-star" cx="966" cy="330" fill="#67e8f9" r="1.2" style="animation-delay: -2s;"></circle>
+<circle class="hero-star" cx="1134" cy="210" fill="#ffffff" r="0.9" style="animation-delay: -4.2s;"></circle>
+<circle class="hero-star" cx="1262" cy="374" fill="#60a5fa" r="2.8" style="animation-delay: -1.8s;"></circle>
+<circle class="hero-star" cx="1320" cy="134" fill="#a78bfa" r="1.2" style="animation-delay: -3.5s;"></circle>
+<circle class="hero-star" cx="104" cy="520" fill="#67e8f9" r="2.2" style="animation-delay: -5.4s;"></circle>
+<circle class="hero-star" cx="1168" cy="565" fill="#bfdbfe" r="1.5" style="animation-delay: -2.9s;"></circle>
+</g>
+<g filter="url(#heroGlow)">
+<path class="hero-starburst" d="M 282 606 L 282 580 M 269 593 L 295 593 M 273 584 L 291 602 M 291 584 L 273 602" opacity="0.72" stroke="#67e8f9" stroke-width="1.4" style="animation-delay: -1s;"></path>
+<path class="hero-starburst" d="M 1012 552 L 1012 520 M 996 536 L 1028 536 M 1001 525 L 1023 547 M 1023 525 L 1001 547" opacity="0.88" stroke="#ffffff" stroke-width="1.7" style="animation-delay: -2.6s;"></path>
+<path class="hero-starburst" d="M 1248 452 L 1248 426 M 1235 439 L 1261 439 M 1239 430 L 1257 448 M 1257 430 L 1239 448" opacity="0.78" stroke="#a78bfa" stroke-width="1.4" style="animation-delay: -3.8s;"></path>
+</g>
+</svg>
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, rgba(2, 6, 23, 0.02), rgba(2, 6, 23, 0.16) 48%, rgba(2, 6, 23, 0.42));"></div>
+<div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+<h1 class="font-montserrat text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
+                Unleash Your Imagination with <span class="text-gradient">AI Prompts</span>
+</h1>
+<p class="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto">
+                Discover a curated gallery of stunning AI-generated art prompts. Dive into a world of creativity, explore unique styles, and find inspiration for your next masterpiece.
+            </p>
+<a class="inline-flex items-center btn-primary px-10 py-4 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 ease-in-out" href="#promptGallery" style="cursor: default;">
+                Explore Prompts <i class="bi bi-arrow-right ml-3 -mr-1"></i>
+</a>
+</div>
+</header>
+<!-- Prompt Detail Panel -->
+<div class="fixed inset-0 z-[100] hidden" id="promptDetailPanel">
+<!-- Overlay -->
+<div class="absolute inset-0 bg-black bg-opacity-70 backdrop-blur-sm" onclick="closePromptDetailPanel()"></div>
+<!-- Panel Content -->
+<div class="relative w-full md:w-3/5 lg:w-2/5 xl:w-1/3 bg-gray-900 h-full ml-auto shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out" id="promptPanelContent">
+<!-- Panel Header -->
+<div class="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
+<h3 class="text-xl font-bold text-white">Prompt Details</h3>
+<button class="text-gray-400 hover:text-white transition-colors duration-200" onclick="closePromptDetailPanel()">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- Panel Body -->
+<div class="p-6 flex-grow overflow-y-auto">
+<!-- Large Preview Image -->
+<div class="mb-6 rounded-lg overflow-hidden border border-gray-700">
+<img alt="AI-generated artwork preview" class="w-full h-auto object-cover" src="assets/images/a_detailed_vibrant_and_imagi_4d40a01718cf628df4d426c9d576973f.png"/>
+</div>
+<!-- Prompt Text -->
+<div class="mb-6 bg-gray-800 p-4 rounded-lg border border-gray-700">
+<h4 class="text-lg font-semibold text-gray-300 mb-2">Prompt Text</h4>
+<div class="flex items-center justify-between">
+<p class="text-gray-200 text-sm italic pr-4" id="detailPromptText">
+                        [Placeholder for actual prompt text. A whimsical robot gardener tending to bioluminescent plants in a retro-futuristic greenhouse, highly detailed, octane render, soft volumetric lighting.]
+                    </p>
+<button class="inline-flex items-center bg-slate-700 text-gray-200 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 rounded-md py-2 px-4 text-sm font-medium transition-colors duration-200" onclick="copyPromptText()">
+<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 7v4a1 1 0 001 1h4a1 1 0 001-1V7m0 0a2 2 0 002-2V3a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2h2zm0 0h12v4a1 1 0 01-1 1H9a1 1 0 01-1-1v-4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                        Copy
+                    </button>
+</div>
+</div>
+<!-- Details: Model and Type -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div>
+<h4 class="text-lg font-semibold text-gray-300 mb-1">Model Name</h4>
+<p class="text-gray-200 text-sm" id="detailModelName">[e.g., Stable Diffusion XL]</p>
+</div>
+<div>
+<h4 class="text-lg font-semibold text-gray-300 mb-1">Prompt Type</h4>
+<p class="text-gray-200 text-sm" id="detailPromptType">[e.g., JSON / Text]</p>
+</div>
+</div>
+</div>
+<!-- Panel Footer - Action Buttons -->
+<div class="p-6 border-t border-gray-700 bg-gray-800 flex justify-end gap-3">
+<button class="inline-flex items-center bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-md py-2 px-4 font-semibold transition-colors duration-200" onclick="downloadPromptAsset()">
+<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                Download
+            </button>
+<a class="inline-flex items-center bg-gray-700 text-gray-200 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 rounded-md py-2 px-4 font-semibold transition-colors duration-200" href="#" id="detailViewOriginalLink" style="cursor: default;" target="_blank">
+<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0l-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                View Original
+            </a>
+</div>
+</div>
+</div>
+<main class="relative flex flex-col lg:flex-row bg-gray-950 text-white min-h-screen w-full" id="promptGallery">
+<!-- Left Column: Controls Sidebar -->
+<div class="flex flex-col lg:flex-row min-h-screen bg-gray-900 text-white w-full flex-1">
+<aside class="w-full lg:w-80 border-gray-800 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto z-20 bg-slate-950 border p-5" style="">
+<h2 class="text-3xl font-bold font-montserrat mb-8 pt-4 lg:pt-0">Prompt Library</h2><div class="mb-6">
+<label class="block text-sm text-gray-300 mb-2" for="searchInput">Search</label>
+<input class="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" id="searchInput" placeholder="Search prompts, tags, authors…" type="text"/>
+</div>
+<!-- The user's request describes the structure of "prompt cards" which are not present in this sidebar (`aside`) element.
+            Therefore, no changes can be applied to this specific HTML snippet based on the request. -->
+<!-- Sort By -->
+<div class="mb-8">
+<h3 class="text-xl font-semibold mb-4">Sort By</h3>
+<div class="flex flex-col space-y-2">
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="sort" type="radio" value="recent"/>
+<span class="ml-2">Recent</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 border-gray-600 focus:ring-indigo-500 bg-blue-800" name="sort" type="radio" value="popular"/>
+<span class="ml-2">Popular</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio bg-gray-700 border-gray-600 focus:ring-indigo-500 text-purple-700" name="sort" type="radio" value="random"/>
+<span class="ml-2">Random</span>
+</label>
+</div>
+</div>
+<!-- Categories Filter List -->
+<div class="mb-8">
+<h3 class="text-xl font-semibold mb-4">Categories</h3>
+<div class="flex flex-col space-y-2">
+<label class="inline-flex items-center">
+<input checked="" class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="all"/>
+<span class="ml-2">All</span>
+</label>
+<label class="inline-flex items-center">
+  <input class="form-radio ..." name="category" type="radio" value="cityscape"/>
+  <span class="ml-2">Cityscape</span>
+</label>
+
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="portrait"/>
+<span class="ml-2">Portrait</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="scene"/>
+<span class="ml-2">Scene</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="concept"/>
+<span class="ml-2">Concept</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="design"/>
+<span class="ml-2">Design</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="product"/>
+<span class="ml-2">Product</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="commercial"/>
+<span class="ml-2">Commercial</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="workflow"/>
+<span class="ml-2">Workflow</span>
+</label>
+<label class="inline-flex items-center">
+<input class="form-radio text-indigo-500 bg-gray-700 border-gray-600 focus:ring-indigo-500" name="category" type="radio" value="tutorial"/>
+<span class="ml-2">Tutorial</span>
+</label>
+</div>
+</div>
+<!-- Filters -->
+<div class="mb-8"><h3 class="text-xl font-semibold mb-4">Filters</h3>
+<div class="flex flex-col space-y-4">
+<div>
+<div class="text-sm text-gray-300 mb-2">Access</div>
+<div class="flex flex-col space-y-2">
+<label class="inline-flex items-center">
+<input checked="" class="form-checkbox text-indigo-500 rounded bg-gray-700 border-gray-600 focus:ring-indigo-500" id="filterFree" type="checkbox"/>
+<span class="ml-2">Free</span>
+</label>
+<label class="inline-flex items-center">
+<input checked="" class="form-checkbox text-indigo-500 rounded bg-gray-700 border-gray-600 focus:ring-indigo-500" id="filterPremium" type="checkbox"/>
+<span class="ml-2">Premium</span>
+</label>
+</div>
+</div>
+<div>
+<label class="block text-sm text-gray-300 mb-2" for="typeSelect">Type</label>
+<select class="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" id="typeSelect">
+<option selected="" value="all">All</option>
+<option value="image">Image</option>
+<option value="video">Video</option>
+</select>
+</div>
+</div>
+</div>
+</aside>
+<div class="flex-1 p-8">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+<h2 class="text-4xl font-bold font-montserrat">Discover AI Prompts</h2>
+<button id="backToFirstPageBtn" class="hidden inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-slate-800 text-slate-200 hover:bg-blue-600 hover:text-white font-semibold transition-colors duration-200" type="button">
+<i class="bi bi-house-door"></i>
+Back to Page 1
+</button>
+</div>
+<div class="grid gap-6" id="promptGrid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 280px)); align-items: start; justify-content: start;"></div>
+</div></div></main>
+<!-- New Data Page: Prompt Entries (Data Source, no display logic) -->
+<div id="promptEntriesDataPage" style="display:none;">
+<script id="prompt-entries-schema" type="application/json">
+            {
+                "pageName": "Prompt Entries",
+                "pageType": "Data-driven / Collection-based page",
+                "description": "This page serves as the data source for Prompt entries, without any display logic on this page itself.",
+                "schema": {
+                    "title": { "type": "Text", "description": "Prompt's curated title, used for card main title display" },
+                    "thumbnail": { "type": "Image", "description": "Card main visual, used for Gallery Grid" },
+                    "tags": { "type": "Multi-select / Array", "options": ["abstract", "nature", "fantasy", "sci-fi", "portraits", "minimalist", "tech", "urban", "art-style", "character-design"], "description": "3-4 lowercase, kebab-case tags" },
+                    "type": { "type": "Select", "options": ["image", "video", "workflow", "tutorial", "commercial"] },
+                    "access": { "type": "Select", "options": ["free", "premium"] }
+                }
+            }
+        </script>
+<script id="prompt-entries-data" type="application/json">
+            [
+                {
+                    "id": "entry-1",
+                    "title": "Vibrant Cityscape at Sunset",
+                    "thumbnail": "https://dummyimage.com/600x338/3b82f6/ffffff&text=Cityscape+Thumbnail",
+                    "tags": ["cityscape", "urban", "sunset", "vibrant"],
+                    "type": "image",
+                    "access": "free"
+                },
+                {
+                    "id": "entry-2",
+                    "title": "Enchanted Forest Pathway",
+                    "thumbnail": "https://dummyimage.com/600x338/a855f7/ffffff&text=Forest+Thumbnail",
+                    "tags": ["nature", "fantasy", "forest", "ethereal"],
+                    "type": "image",
+                    "access": "premium"
+                },
+                {
+                    "id": "entry-3",
+                    "title": "Abstract Geometric Flow",
+                    "thumbnail": "https://dummyimage.com/600x338/6366f1/ffffff&text=Geometric+Thumbnail",
+                    "tags": ["abstract", "geometric", "minimalist"],
+                    "type": "image",
+                    "access": "free"
+                },
+                {
+                    "id": "entry-4",
+                    "title": "Futuristic Robot Portrait",
+                    "thumbnail": "https://dummyimage.com/600x338/1e293b/ffffff&text=Robot+Portrait",
+                    "tags": ["sci-fi", "robot", "portrait", "tech"],
+                    "type": "image",
+                    "access": "premium"
+                }
+            ]
+        </script>
+</div>
+<!-- Pagination -->
+<section class="py-16 bg-gradient-to-t from-slate-900 to-indigo-950" id="paginationSection">
+<div class="max-w-7xl mx-auto px-6 flex items-center justify-center gap-4" id="paginationControls">
+<button class="pagination-btn bg-slate-800 text-slate-400 hover:text-blue-500 px-4 py-2 rounded-full transition-colors duration-200" data-page-action="prev" type="button">
+<i class="bi bi-chevron-left"></i>
+</button>
+<button class="pagination-btn bg-blue-600 text-white px-5 py-2 rounded-full font-semibold transition-colors duration-200" data-page="1" type="button">1</button>
+<button class="pagination-btn bg-slate-800 text-slate-200 hover:bg-slate-700 px-5 py-2 rounded-full font-semibold transition-colors duration-200" data-page="2" type="button">2</button>
+<button class="pagination-btn bg-slate-800 text-slate-200 hover:bg-slate-700 px-5 py-2 rounded-full font-semibold transition-colors duration-200" data-page="3" type="button">3</button>
+<span class="text-slate-400">...</span>
+<button class="pagination-btn bg-slate-800 text-slate-200 hover:bg-slate-700 px-5 py-2 rounded-full font-semibold transition-colors duration-200" data-page="10" type="button">10</button>
+<button class="pagination-btn bg-slate-800 text-slate-400 hover:text-blue-500 px-4 py-2 rounded-full transition-colors duration-200" data-page-action="next" type="button">
+<i class="bi bi-chevron-right"></i>
+</button>
+</div>
+<div class="text-center mt-8">
+<button class="btn-primary px-8 py-3 rounded-full text-md font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out" id="loadMoreBtn" type="button">
+                Load More <i class="bi bi-arrow-clockwise ml-2"></i>
+</button>
+</div>
+</section>
+<!-- Call to Action -->
+<!-- Footer -->
+<footer class="bg-slate-900 py-16">
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
+<!-- Brand/Logo -->
+<div class="col-span-1 md:col-span-1">
+<h3 class="font-montserrat text-2xl font-bold text-slate-50 mb-4">AI<span class="text-blue-500">Prompts</span></h3>
+<p class="text-slate-400 text-sm leading-relaxed">© 2023 AI Prompts. All rights reserved.</p>
+<div class="flex space-x-4 mt-6">
+<a class="text-slate-400 hover:text-blue-500 transition-colors duration-200" href="#" style="cursor: default;"><i class="bi bi-twitter text-xl"></i></a>
+<a class="text-slate-400 hover:text-blue-500 transition-colors duration-200" href="#" style="cursor: default;"><i class="bi bi-instagram text-xl"></i></a>
+<a class="text-slate-400 hover:text-blue-500 transition-colors duration-200" href="#" style="cursor: default;"><i class="bi bi-github text-xl"></i></a>
+<a class="text-slate-400 hover:text-blue-500 transition-colors duration-200" href="#" style="cursor: default;"><i class="bi bi-linkedin text-xl"></i></a>
+</div>
+</div>
+<!-- Explore Links -->
+<div>
+<h4 class="font-montserrat text-lg font-semibold text-slate-50 mb-5">Explore</h4>
+<ul class="space-y-3 text-sm">
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Recent Prompts</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Popular Prompts</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Categories</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Featured Artists</a></li>
+<li><a class="text-slate-400 footer-link" href="#promptGallery" style="cursor: default;">Prompt Library</a></li>
+</ul>
+</div>
+<!-- Resources Links -->
+<div>
+<h4 class="font-montserrat text-lg font-semibold text-slate-50 mb-5">Resources</h4>
+<ul class="space-y-3 text-sm">
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">How it Works</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Prompt Guidelines</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">API Documentation</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Blog</a></li>
+</ul>
+</div>
+<!-- Community & Legal -->
+<div>
+<h4 class="font-montserrat text-lg font-semibold text-slate-50 mb-5">Community</h4>
+<ul class="space-y-3 text-sm">
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Join Discord</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Support</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Privacy Policy</a></li>
+<li><a class="text-slate-400 footer-link" href="#" style="cursor: default;">Terms of Service</a></li>
+</ul>
+</div>
+</div>
+</footer>
+<script src="prompts.js"></script><script src="app.js"></script></body></html>
