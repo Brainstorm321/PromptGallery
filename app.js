@@ -273,11 +273,20 @@
     return ok;
   }
 
+  function pulseCopyButton(btn) {
+    if (!btn) return;
+    btn.classList.remove('is-clicked');
+    void btn.offsetWidth;
+    btn.classList.add('is-clicked');
+    window.setTimeout(() => btn.classList.remove('is-clicked'), 420);
+  }
+
   function bindCopyButtons(){
     document.querySelectorAll('.copy-btn').forEach(btn => {
       btn.addEventListener('click', async event => {
         event.preventDefault();
         event.stopPropagation();
+        pulseCopyButton(btn);
 
         const item = PROMPTS.find(p => String(p.id) === String(btn.dataset.id));
         if (!item) {
@@ -319,3 +328,4 @@
 
   render();
 })();
+
