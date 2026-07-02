@@ -144,7 +144,6 @@
 
   const promptTitles = {
     zh: {
-      'gemini-portrait-test': '电商KV视觉图',
       'vibrant-scene-at-sunset': '日落活力城市景观',
       'enchanted-forest-pathway': '魔法森林小径'
     }

@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -7,6 +8,7 @@ const { build } = require('./scripts/build-data');
 
 const ROOT = __dirname;
 const DATA_FILE = path.join(ROOT, 'data', 'prompts.json');
+const SECRETS_FILE = path.join(ROOT, '.admin-secrets.json');
 const IMAGE_DIR = path.join(ROOT, 'assets', 'images');
 const PORT = Number(process.env.PROMPT_GALLERY_ADMIN_PORT || 8787);
 const MAX_BODY = 80 * 1024 * 1024;
@@ -14,6 +16,7 @@ const MAX_BODY = 80 * 1024 * 1024;
 const CATEGORY_VALUES = ['cityscape', 'portrait', 'scene', 'concept', 'design', 'product', 'commercial', 'workflow', 'tutorial'];
 const ACCESS_VALUES = ['Free', 'Premium'];
 const TYPE_VALUES = ['Image', 'Video'];
+const DEFAULT_TRANSLATION_MODEL = process.env.OPENAI_TRANSLATION_MODEL || 'gpt-4.1-mini';
 
 function readJson(file, fallback) {
   if (!fs.existsSync(file)) return fallback;
@@ -64,6 +67,169 @@ async function readBodyJson(req) {
   return JSON.parse(body.toString('utf8'));
 }
 
+function readSecrets() {
+  try {
+    return readJson(SECRETS_FILE, {});
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeSecrets(value) {
+  const current = readSecrets();
+  const next = { ...current, ...value };
+  Object.keys(next).forEach(key => {
+    if (next[key] === '' || next[key] == null) delete next[key];
+  });
+  fs.writeFileSync(SECRETS_FILE, JSON.stringify(next, null, 2) + '\n', 'utf8');
+}
+
+function getOpenAIConfig() {
+  const secrets = readSecrets();
+  return {
+    apiKey: process.env.OPENAI_API_KEY || secrets.OPENAI_API_KEY || '',
+    model: process.env.OPENAI_TRANSLATION_MODEL || secrets.OPENAI_TRANSLATION_MODEL || DEFAULT_TRANSLATION_MODEL
+  };
+}
+
+function requestJson(options, body) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, res => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (error) { data = { raw: text }; }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(data.error?.message || data.message || text || `HTTP ${res.statusCode}`));
+          return;
+        }
+        resolve(data);
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(45000, () => req.destroy(new Error('Translation request timed out.')));
+    req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+function extractResponseText(data) {
+  if (typeof data.output_text === 'string') return data.output_text;
+  const parts = [];
+  for (const item of data.output || []) {
+    for (const content of item.content || []) {
+      if (typeof content.text === 'string') parts.push(content.text);
+    }
+  }
+  return parts.join('\n').trim();
+}
+
+function parseJsonText(text) {
+  const clean = String(text || '').trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+  try { return JSON.parse(clean); } catch (error) {}
+  const match = clean.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Translation response did not contain JSON.');
+  return JSON.parse(match[0]);
+}
+
+function detectTranslationDirection(item, requestedDirection) {
+  if (requestedDirection && requestedDirection !== 'auto') return requestedDirection;
+  const hasZh = !!(item.titleZh || item.promptZh);
+  const hasEn = !!(item.title || item.prompt);
+  const needsEn = !!((item.titleZh && !item.title) || (item.promptZh && !item.prompt));
+  const needsZh = !!((item.title && !item.titleZh) || (item.prompt && !item.promptZh));
+  if (hasZh && needsEn) return 'zhToEn';
+  if (hasEn && needsZh) return 'enToZh';
+  if (hasZh && !hasEn) return 'zhToEn';
+  if (hasEn && !hasZh) return 'enToZh';
+  return 'zhToEn';
+}
+
+async function translatePromptItem(item, requestedDirection) {
+  const { apiKey, model } = getOpenAIConfig();
+  if (!apiKey) {
+    throw new Error('OpenAI API Key is not configured. Click 设置翻译 Key first, or set OPENAI_API_KEY before starting the admin server.');
+  }
+
+  const direction = detectTranslationDirection(item, requestedDirection);
+  const directionText = direction === 'enToZh' ? 'English to Simplified Chinese' : 'Simplified Chinese to English';
+  const payload = {
+    direction,
+    title: item.title || '',
+    titleZh: item.titleZh || '',
+    prompt: item.prompt || '',
+    promptZh: item.promptZh || '',
+  };
+
+  const body = {
+    model,
+    text: {
+      format: {
+        type: 'json_schema',
+        name: 'prompt_gallery_translation',
+        strict: true,
+        schema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            title: { type: 'string' },
+            titleZh: { type: 'string' },
+            prompt: { type: 'string' },
+            promptZh: { type: 'string' },
+          },
+          required: ['title', 'titleZh', 'prompt', 'promptZh'],
+        },
+      },
+    },
+    input: [
+      {
+        role: 'system',
+        content: [{
+          type: 'input_text',
+          text: 'You are a strict translation engine for an AI prompt gallery. Translate only the text provided by the user. Do not invent new concepts, do not summarize, do not beautify beyond faithful translation. Preserve URLs, @handles, model names, brand/product names, and line breaks. Return JSON only.',
+        }],
+      },
+      {
+        role: 'user',
+        content: [{
+          type: 'input_text',
+          text: `Translate ${directionText}. If direction is zhToEn, translate titleZh into title and promptZh into prompt. If direction is enToZh, translate title into titleZh and prompt into promptZh. Keep already provided counterpart fields unless they are empty. Input JSON:\n${JSON.stringify(payload)}`,
+        }],
+      },
+    ],
+  };
+
+  const data = await requestJson({
+    hostname: 'api.openai.com',
+    path: '/v1/responses',
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  }, body);
+
+  const translated = parseJsonText(extractResponseText(data));
+  const output = {
+    title: String(item.title || '').trim(),
+    titleZh: String(item.titleZh || '').trim(),
+    prompt: String(item.prompt || '').trim(),
+    promptZh: String(item.promptZh || '').trim(),
+  };
+
+  if (direction === 'enToZh') {
+    output.titleZh = String(translated.titleZh || translated.title || output.titleZh).trim();
+    output.promptZh = String(translated.promptZh || translated.prompt || output.promptZh).trim();
+  } else {
+    output.title = String(translated.title || translated.titleZh || output.title).trim();
+    output.prompt = String(translated.prompt || translated.promptZh || output.prompt).trim();
+  }
+
+  return { direction, model, item: output };
+}
+
 function slugify(value, fallback = 'prompt') {
   const ascii = String(value || '')
     .normalize('NFKD')
@@ -104,8 +270,24 @@ function normalizePrompt(item, existing) {
   return next;
 }
 
-function saveUploadedImage(file, baseName) {
-  if (!file || !file.dataUrl) return null;
+function isLocalImagePath(value) {
+  const webPath = String(value || '').replace(/\\/g, '/');
+  return webPath.startsWith('assets/images/') && !webPath.includes('..');
+}
+
+function removeLocalImageIfUnused(imagePath, prompts) {
+  if (!isLocalImagePath(imagePath)) return false;
+  const stillUsed = prompts.some(item => item.image === imagePath);
+  if (stillUsed) return false;
+  const fullPath = path.join(ROOT, imagePath);
+  if (fs.existsSync(fullPath)) {
+    fs.unlinkSync(fullPath);
+    return true;
+  }
+  return false;
+}
+
+function saveUploadedImage(file, baseName) {  if (!file || !file.dataUrl) return null;
   const match = String(file.dataUrl).match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error('Image upload format is invalid.');
 
@@ -135,7 +317,25 @@ function runGit(args) {
 async function publish() {
   const status = await runGit(['status', '--short']);
   if (!status.trim()) return 'No changes to publish.';
-  await runGit(['add', '.']);
+
+  await runGit(['add', '--', 'data/prompts.json', 'prompts.js', 'download-assets.js', 'index.html', 'detail.html']);
+  const newImages = await runGit(['ls-files', '--others', '--exclude-standard', 'assets/images']);
+  const imageFiles = newImages.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (imageFiles.length) {
+    await runGit(['add', '--', ...imageFiles]);
+  }
+
+  const prompts = readJson(DATA_FILE, []);
+  const usedImages = new Set(prompts.map(item => item.image).filter(Boolean));
+  const deletedStatus = status.split(/\r?\n/).map(line => line.trim()).filter(line => line.startsWith('D assets/images/') || line.startsWith('D  assets/images/'));
+  const deletedImages = deletedStatus.map(line => line.replace(/^D\s+/, '').trim()).filter(file => !usedImages.has(file.replace(/\\/g, '/')));
+  if (deletedImages.length) {
+    await runGit(['add', '--', ...deletedImages]);
+  }
+
+  const staged = await runGit(['diff', '--cached', '--name-only']);
+  if (!staged.trim()) return 'No publishable content changes. Unrelated local changes were left untouched.';
+
   const message = `Update prompt gallery content ${new Date().toISOString().slice(0, 10)}`;
   await runGit(['commit', '-m', message]);
   const pushed = await runGit(['push']);
@@ -179,8 +379,31 @@ async function handleApi(req, res, url) {
     return;
   }
 
-  if (req.method === 'POST' && url.pathname === '/api/prompts') {
+  if (req.method === 'GET' && url.pathname === '/api/settings') {
+    const config = getOpenAIConfig();
+    send(res, 200, { hasOpenAIKey: !!config.apiKey, model: config.model });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/settings') {
     const payload = await readBodyJson(req);
+    writeSecrets({
+      OPENAI_API_KEY: String(payload.openAIKey || '').trim(),
+      OPENAI_TRANSLATION_MODEL: String(payload.model || '').trim() || DEFAULT_TRANSLATION_MODEL,
+    });
+    const config = getOpenAIConfig();
+    send(res, 200, { ok: true, hasOpenAIKey: !!config.apiKey, model: config.model });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/translate') {
+    const payload = await readBodyJson(req);
+    const result = await translatePromptItem(payload.item || {}, payload.direction || 'auto');
+    send(res, 200, { ok: true, ...result });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/prompts') {    const payload = await readBodyJson(req);
     const prompts = readJson(DATA_FILE, []);
     const existingIndex = prompts.findIndex(p => p.id === payload.item?.id);
     const existing = existingIndex >= 0 ? prompts[existingIndex] : null;
@@ -201,8 +424,22 @@ async function handleApi(req, res, url) {
     return;
   }
 
-  if (req.method === 'POST' && url.pathname === '/api/build') {
-    send(res, 200, { ok: true, built: build() });
+  if (req.method === 'POST' && url.pathname === '/api/prompts/delete') {
+    const payload = await readBodyJson(req);
+    const id = String(payload.id || '').trim();
+    if (!id) throw new Error('Prompt id is required.');
+    const prompts = readJson(DATA_FILE, []);
+    const target = prompts.find(item => item.id === id);
+    if (!target) throw new Error('Prompt was not found.');
+    const nextPrompts = prompts.filter(item => item.id !== id);
+    writeJson(DATA_FILE, nextPrompts);
+    const imageRemoved = payload.deleteImage !== false ? removeLocalImageIfUnused(target.image, nextPrompts) : false;
+    const built = build();
+    send(res, 200, { ok: true, deletedId: id, imageRemoved, built });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/build') {    send(res, 200, { ok: true, built: build() });
     return;
   }
 

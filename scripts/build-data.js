@@ -5,6 +5,29 @@ const ROOT = path.resolve(__dirname, '..');
 const DATA_FILE = path.join(ROOT, 'data', 'prompts.json');
 const PROMPTS_JS = path.join(ROOT, 'prompts.js');
 const DOWNLOADS_JS = path.join(ROOT, 'download-assets.js');
+const HTML_FILES = [path.join(ROOT, 'index.html'), path.join(ROOT, 'detail.html')];
+const VERSIONED_ASSETS = ['css/style.css', 'prompts.js', 'i18n.js', 'app.js', 'download-assets.js', 'detail.js'];
+
+function makeAssetVersion() {
+  const now = new Date();
+  const pad = value => String(value).padStart(2, '0');
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function updateHtmlAssetVersions(version) {
+  for (const file of HTML_FILES) {
+    if (!fs.existsSync(file)) continue;
+    let html = fs.readFileSync(file, 'utf8');
+    for (const asset of VERSIONED_ASSETS) {
+      html = html.replace(new RegExp(`${escapeRegExp(asset)}(\\?v=[^"']*)?`, 'g'), `${asset}?v=${version}`);
+    }
+    fs.writeFileSync(file, html, 'utf8');
+  }
+}
 
 function readPrompts() {
   if (!fs.existsSync(DATA_FILE)) return [];
@@ -51,12 +74,14 @@ function build() {
   const prompts = readPrompts();
   writePromptsJs(prompts);
   writeDownloadAssets(prompts);
-  return { count: prompts.length };
+  const version = makeAssetVersion();
+  updateHtmlAssetVersions(version);
+  return { count: prompts.length, version };
 }
 
 if (require.main === module) {
   const result = build();
-  console.log(`Built ${result.count} prompts.`);
+  console.log(`Built ${result.count} prompts with asset version ${result.version}.`);
 }
 
 module.exports = { build, readPrompts };

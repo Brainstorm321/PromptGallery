@@ -1,23 +1,6 @@
 // prompts.js - prompt gallery data
 window.PROMPTS = [
   {
-    "id": "gemini-portrait-test",
-    "title": "E-commerce KV Visual",
-    "titleZh": "电商KV视觉图",
-    "author": "@yyyole",
-    "category": "portrait",
-    "type": "Image",
-    "access": "Free",
-    "tags": [
-      "concept",
-      "portrait",
-      "x-twitter"
-    ],
-    "image": "assets/images/Gemini_Generated_Image_mo8m5nmo8m5nmo8m.png",
-    "originalUrl": "https://x.com/yyyole/status/2002978535791534421?s=20",
-    "prompt": ""
-  },
-  {
     "id": "vibrant-scene-at-sunset",
     "title": "Vibrant Cityscape at Sunset",
     "titleZh": "日落活力城市景观",
