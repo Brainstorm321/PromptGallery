@@ -277,9 +277,9 @@
               <input id="title" placeholder="例如：E-commerce KV Visual" />
             </div>
             <div class="field full">
-              <label for="category">??</label>
+              <label for="category">分类</label>
               <div class="choice-grid" id="categoryChoices"></div>
-              <input id="category" placeholder="concept, commercial" readonly />
+              <input id="category" placeholder="concept, commercial" />
               <div class="hint">可以选择一个或多个分类；前台侧边栏筛选命中任意一个分类都会显示。</div>
             </div>
             <div class="field">
@@ -301,7 +301,7 @@
               <input id="author" placeholder="@author" />
             </div>
             <div class="field full">
-              <label for="tags">??</label>
+              <label for="tags">标签</label>
               <div class="choice-grid" id="tagChoices"></div>
               <input id="tags" placeholder="concept, commercial, x.com" />
               <div class="hint">可以点选常用标签，也可以手动补充；保存时会自动按英文逗号分隔。</div>
@@ -401,7 +401,7 @@
       const data = await api('/api/prompts');
       prompts = data.prompts || [];
       categories = data.categories || [];
-      tagOptions = uniqueValues([...categories, 'x.com', 'x-twitter', 'brand-visual', 'cover', 'business-card']);
+      tagOptions = uniqueValues([...categories, 'x.com', 'x-twitter', 'Gemini', 'ChatGPT', 'brand-visual', 'cover', 'business-card']);
       renderChoiceGroup('categoryChoices', 'category', categories);
       renderChoiceGroup('tagChoices', 'tags', tagOptions);
       $('access').innerHTML = (data.access || ['Free','Premium']).map(optionHTML).join('');
@@ -486,7 +486,7 @@
 
     function fill(item = {}) {
       fields.forEach(name => { if ($(name)) $(name).value = Array.isArray(item[name]) ? item[name].join(', ') : (item[name] || ''); });
-      setCommaValue('category', listValues(item.category || categories[0] || 'concept'));
+      setCommaValue('category', listValues(item.category || ''));
       setCommaValue('tags', listValues(item.tags));
       syncChoiceGroupFromInput('categoryChoices', 'category');
       syncChoiceGroupFromInput('tagChoices', 'tags');
@@ -504,7 +504,7 @@
       renderList();
     }
 
-    function newPrompt() { fill({ category: ['concept'], access: 'Free', type: 'Image', author: '@unknown' }); }
+    function newPrompt() { fill({ category: [], access: 'Free', type: 'Image', author: '@unknown' }); }
     function editPrompt(id) { const item = prompts.find(p => p.id === id); if (item) fill(item); }
 
 
