@@ -14,8 +14,8 @@ window.PROMPTS = [
     ],
     "image": "assets/images/high-end-real-estate-project-vertical-advertisement-poster-mr41s4fh.webp",
     "originalUrl": "https://x.com/MrLarus/status/2063149652690514014?s=20",
-    "prompt": "High-end real estate project vertical advertisement poster, can be slightly modified to generate matte gold dark style posters with different themes",
-    "promptZh": "高端地产项目竖版广告海报，稍加改造后可用以生成不同主题的哑光金暗黑风格海报"
+    "prompt": "High-end real estate project vertical advertisement poster, slightly modified to generate different themed matte gold and dark style posters. For detailed prompts, see the original source link.",
+    "promptZh": "高端地产项目竖版广告海报，稍加改造后可用以生成不同主题的哑光金暗黑风格海报。提示词详见原始来源链接。"
   },
   {
     "id": "design-a-minimalist-poster-with-high-end-commercial-aesthetics",
