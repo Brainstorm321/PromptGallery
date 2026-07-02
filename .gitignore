@@ -4,3 +4,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 .admin-secrets.json
+private-data/
+private-prompts/
+private-assets/

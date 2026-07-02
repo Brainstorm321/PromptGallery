@@ -34,9 +34,20 @@ function readPrompts() {
   return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
 }
 
+function publicPrompt(item) {
+  const { access, ...rest } = item;
+  return rest;
+}
+
+function publicPrompts(prompts) {
+  return prompts
+    .filter(item => String(item.access || 'Free').toLowerCase() === 'free')
+    .map(publicPrompt);
+}
+
 function writePromptsJs(prompts) {
-  const body = JSON.stringify(prompts, null, 2).replace(/</g, '\\u003c');
-  fs.writeFileSync(PROMPTS_JS, `// prompts.js - prompt gallery data\nwindow.PROMPTS = ${body};\n`, 'utf8');
+  const body = JSON.stringify(publicPrompts(prompts), null, 2).replace(/</g, '\\u003c');
+  fs.writeFileSync(PROMPTS_JS, `// prompts.js - public prompt gallery data.\nwindow.PROMPTS = ${body};\n`, 'utf8');
 }
 
 function mimeFor(filePath) {
@@ -53,7 +64,7 @@ function normalizeWebPath(value) {
 
 function writeDownloadAssets(prompts) {
   const downloads = {};
-  for (const item of prompts) {
+  for (const item of publicPrompts(prompts)) {
     const webPath = normalizeWebPath(item.image);
     if (!webPath || /^https?:\/\//i.test(webPath)) continue;
     const fullPath = path.join(ROOT, webPath);
@@ -76,7 +87,7 @@ function build() {
   writeDownloadAssets(prompts);
   const version = makeAssetVersion();
   updateHtmlAssetVersions(version);
-  return { count: prompts.length, version };
+  return { count: publicPrompts(prompts).length, total: prompts.length, version };
 }
 
 if (require.main === module) {

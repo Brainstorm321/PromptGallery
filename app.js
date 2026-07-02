@@ -1,8 +1,6 @@
 (function(){
   const grid = document.getElementById('promptGrid');
   const searchInput = document.getElementById('searchInput');
-  const filterFree = document.getElementById('filterFree');
-  const filterPremium = document.getElementById('filterPremium');
   const typeSelect = document.getElementById('typeSelect');
   const paginationControls = document.getElementById('paginationControls');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -34,14 +32,10 @@
 
   function matches(p){
     const q = (searchInput?.value || '').trim().toLowerCase();
-    const allowFree = !!filterFree?.checked;
-    const allowPremium = !!filterPremium?.checked;
     const type = (typeSelect?.value || 'all').toLowerCase();
     const selectedCat = getSelectedValue('category');
 
     if(selectedCat !== 'all' && (p.category || '').toLowerCase() !== selectedCat.toLowerCase()) return false;
-    if((p.access || '').toLowerCase() === 'free' && !allowFree) return false;
-    if((p.access || '').toLowerCase() === 'premium' && !allowPremium) return false;
     if(type !== 'all' && (p.type || 'image').toLowerCase() !== type) return false;
 
     if(!q) return true;
@@ -54,9 +48,7 @@
 
   function sortPrompts(list) {
     const sortBy = getSelectedValue('sort');
-    if (sortBy === 'popular') {
-      return list.sort((a, b) => ((b.access || '').toLowerCase() === 'premium') - ((a.access || '').toLowerCase() === 'premium'));
-    }
+    if (sortBy === 'popular') return list;
     if (sortBy === 'random') return list.sort(() => Math.random() - 0.5);
     return list;
   }
@@ -77,11 +69,7 @@
     const tagPills = (p.tags || []).slice(0, 5).map(t => (
       `<span class="text-xs px-2 py-1 rounded-full bg-gray-700/60 text-gray-200 border border-gray-600/60">${escapeHtml(term('tag', t))}</span>`
     )).join('');
-    const isPremium = (p.access || '').toLowerCase() === 'premium';
-    const accessBadge = isPremium
-      ? `<span class="text-sm font-semibold text-yellow-400">${escapeHtml(term('access', 'premium'))}</span>`
-      : `<span class="text-sm font-semibold text-green-400">${escapeHtml(term('access', 'free'))}</span>`;
-    const copyTitle = isPremium ? tr('gallery.premiumPrivate') : tr('gallery.copyPrompt');
+    const copyTitle = tr('gallery.copyPrompt');
 
     const imageFitClass = p.category === 'portrait'
       ? 'object-cover object-top'
@@ -108,7 +96,6 @@
           <div class="flex flex-wrap gap-2 mb-4">${tagPills}</div>
           <div class="flex items-center justify-between">
             <div class="text-sm text-gray-300">${escapeHtml(tr('gallery.category'))} <span class="text-gray-100 font-semibold">${escapeHtml(term('category', p.category))}</span></div>
-            ${accessBadge}
           </div>
         </div>
       </div>`;
@@ -306,11 +293,6 @@
           showToast(tr('toast.promptNotFound'));
           return;
         }
-        if ((item.access || '').toLowerCase() === 'premium') {
-          showToast(tr('toast.premiumPrivate'));
-          return;
-        }
-
         const value = getCopyValue(item);
         if (!value) {
           showToast(tr('toast.noPrompt'));
@@ -323,7 +305,7 @@
     });
   }
 
-  [searchInput, filterFree, filterPremium, typeSelect].forEach(el => {
+  [searchInput, typeSelect].forEach(el => {
     if(el) el.addEventListener('input', resetToFirstPage);
   });
 

@@ -25,7 +25,9 @@ window.PROMPTS = [
     "category": "commercial",
     "type": "Image",
     "tags": [
-      "品牌视觉，封面，名片"
+      "brand-visual",
+      "cover",
+      "business-card"
     ],
     "image": "assets/images/design-a-minimalist-poster-with-high-end-commercial-aesthetics-mr3v3hdn.webp",
     "originalUrl": "https://x.com/xiaoxiaodong01/status/2057987390892085629?s=20",

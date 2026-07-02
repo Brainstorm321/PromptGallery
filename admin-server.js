@@ -8,8 +8,10 @@ const { build } = require('./scripts/build-data');
 
 const ROOT = __dirname;
 const DATA_FILE = path.join(ROOT, 'data', 'prompts.json');
+const PRIVATE_DATA_FILE = path.join(ROOT, 'private-data', 'premium.json');
 const SECRETS_FILE = path.join(ROOT, '.admin-secrets.json');
-const IMAGE_DIR = path.join(ROOT, 'assets', 'images');
+const PUBLIC_IMAGE_DIR = path.join(ROOT, 'assets', 'images');
+const PRIVATE_IMAGE_DIR = path.join(ROOT, 'private-assets', 'images');
 const PORT = Number(process.env.PROMPT_GALLERY_ADMIN_PORT || 8787);
 const MAX_BODY = 80 * 1024 * 1024;
 
@@ -272,7 +274,34 @@ function normalizePrompt(item, existing) {
 
 function isLocalImagePath(value) {
   const webPath = String(value || '').replace(/\\/g, '/');
-  return webPath.startsWith('assets/images/') && !webPath.includes('..');
+  return (webPath.startsWith('assets/images/') || webPath.startsWith('private-assets/images/')) && !webPath.includes('..');
+}
+
+function isPremiumItem(item) {
+  return String(item?.access || '').toLowerCase() === 'premium';
+}
+
+function readPublicPrompts() {
+  return readJson(DATA_FILE, []).map(item => ({ ...item, access: 'Free' }));
+}
+
+function readPrivatePrompts() {
+  return readJson(PRIVATE_DATA_FILE, []).map(item => ({ ...item, access: 'Premium' }));
+}
+
+function readAllPrompts() {
+  return [...readPublicPrompts(), ...readPrivatePrompts()];
+}
+
+function writePromptStores(prompts) {
+  const publicPrompts = [];
+  const privatePrompts = [];
+  for (const item of prompts) {
+    if (isPremiumItem(item)) privatePrompts.push({ ...item, access: 'Premium' });
+    else publicPrompts.push({ ...item, access: 'Free' });
+  }
+  writeJson(DATA_FILE, publicPrompts);
+  writeJson(PRIVATE_DATA_FILE, privatePrompts);
 }
 
 function removeLocalImageIfUnused(imagePath, prompts) {
@@ -287,7 +316,7 @@ function removeLocalImageIfUnused(imagePath, prompts) {
   return false;
 }
 
-function saveUploadedImage(file, baseName) {  if (!file || !file.dataUrl) return null;
+function saveUploadedImage(file, baseName, access = 'Free') {  if (!file || !file.dataUrl) return null;
   const match = String(file.dataUrl).match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error('Image upload format is invalid.');
 
@@ -295,9 +324,12 @@ function saveUploadedImage(file, baseName) {  if (!file || !file.dataUrl) return
   const ext = mime.includes('jpeg') ? 'jpg' : mime.includes('webp') ? 'webp' : mime.includes('gif') ? 'gif' : 'png';
   const rawName = path.basename(String(file.name || `${baseName}.${ext}`), path.extname(String(file.name || '')));
   const filename = `${slugify(baseName || rawName, 'image')}-${Date.now().toString(36)}.${ext}`;
-  fs.mkdirSync(IMAGE_DIR, { recursive: true });
-  fs.writeFileSync(path.join(IMAGE_DIR, filename), Buffer.from(match[2], 'base64'));
-  return `assets/images/${filename}`;
+  const isPremium = String(access || '').toLowerCase() === 'premium';
+  const imageDir = isPremium ? PRIVATE_IMAGE_DIR : PUBLIC_IMAGE_DIR;
+  const webDir = isPremium ? 'private-assets/images' : 'assets/images';
+  fs.mkdirSync(imageDir, { recursive: true });
+  fs.writeFileSync(path.join(imageDir, filename), Buffer.from(match[2], 'base64'));
+  return `${webDir}/${filename}`;
 }
 
 function runGit(args) {
@@ -325,7 +357,7 @@ async function publish() {
     await runGit(['add', '--', ...imageFiles]);
   }
 
-  const prompts = readJson(DATA_FILE, []);
+  const prompts = readPublicPrompts();
   const usedImages = new Set(prompts.map(item => item.image).filter(Boolean));
   const deletedStatus = status.split(/\r?\n/).map(line => line.trim()).filter(line => line.startsWith('D assets/images/') || line.startsWith('D  assets/images/'));
   const deletedImages = deletedStatus.map(line => line.replace(/^D\s+/, '').trim()).filter(file => !usedImages.has(file.replace(/\\/g, '/')));
@@ -375,7 +407,7 @@ function localAddresses() {
 
 async function handleApi(req, res, url) {
   if (req.method === 'GET' && url.pathname === '/api/prompts') {
-    send(res, 200, { prompts: readJson(DATA_FILE, []), categories: CATEGORY_VALUES, access: ACCESS_VALUES, types: TYPE_VALUES });
+    send(res, 200, { prompts: readAllPrompts(), categories: CATEGORY_VALUES, access: ACCESS_VALUES, types: TYPE_VALUES });
     return;
   }
 
@@ -404,21 +436,22 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === 'POST' && url.pathname === '/api/prompts') {    const payload = await readBodyJson(req);
-    const prompts = readJson(DATA_FILE, []);
+    const prompts = readAllPrompts();
     const existingIndex = prompts.findIndex(p => p.id === payload.item?.id);
     const existing = existingIndex >= 0 ? prompts[existingIndex] : null;
     const item = normalizePrompt(payload.item || {}, existing);
-    const imagePath = saveUploadedImage(payload.imageFile, item.title || item.titleZh || item.id);
+    const imagePath = saveUploadedImage(payload.imageFile, item.title || item.titleZh || item.id, item.access);
     if (imagePath) item.image = imagePath;
+    const replacedImage = imagePath && existing?.image && existing.image !== item.image ? existing.image : '';
     if (!item.image) throw new Error('Please choose an image before saving.');
 
     const duplicate = prompts.find(p => p.id === item.id && (!existing || p !== existing));
     if (duplicate) item.id = `${item.id}-${Date.now().toString(36)}`;
 
-    if (existingIndex >= 0) prompts[existingIndex] = item;
-    else prompts.unshift(item);
+    const nextPrompts = existingIndex >= 0 ? prompts.map(p => p.id === existing.id ? item : p) : [item, ...prompts];
+    if (replacedImage) removeLocalImageIfUnused(replacedImage, nextPrompts);
 
-    writeJson(DATA_FILE, prompts);
+    writePromptStores(nextPrompts);
     const built = build();
     send(res, 200, { ok: true, item, built });
     return;
@@ -428,11 +461,11 @@ async function handleApi(req, res, url) {
     const payload = await readBodyJson(req);
     const id = String(payload.id || '').trim();
     if (!id) throw new Error('Prompt id is required.');
-    const prompts = readJson(DATA_FILE, []);
+    const prompts = readAllPrompts();
     const target = prompts.find(item => item.id === id);
     if (!target) throw new Error('Prompt was not found.');
     const nextPrompts = prompts.filter(item => item.id !== id);
-    writeJson(DATA_FILE, nextPrompts);
+    writePromptStores(nextPrompts);
     const imageRemoved = payload.deleteImage !== false ? removeLocalImageIfUnused(target.image, nextPrompts) : false;
     const built = build();
     send(res, 200, { ok: true, deletedId: id, imageRemoved, built });

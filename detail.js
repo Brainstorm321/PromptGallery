@@ -151,17 +151,16 @@
   }
 
   function updateButtons(item, displayText, originalUrl) {
-    const isPremium = (item.access || "").toLowerCase() === "premium";
     const hasCopyText = !!(displayText && displayText.trim().length);
     const hasOriginal = !!(originalUrl && originalUrl.trim().length);
     const src = item.image || (imgEl ? imgEl.src : "");
 
-    setCopyEnabled(!isPremium && hasCopyText);
+    setCopyEnabled(hasCopyText);
 
     if (copyBtn) {
-      copyBtn.dataset.privateState = isPremium ? "true" : "";
-      copyBtn.textContent = isPremium ? tr("detail.private") : tr("detail.copy");
-      copyBtn.title = isPremium ? tr("gallery.premiumPrivate") : tr("gallery.copyPrompt");
+      copyBtn.dataset.privateState = "";
+      copyBtn.textContent = tr("detail.copy");
+      copyBtn.title = tr("gallery.copyPrompt");
     }
 
     if (downloadBtn) {
@@ -208,16 +207,14 @@
     const title = promptTitle(item);
     const author = item.creator || item.author || "@unknown";
     const type = item.type || "Image";
-    const access = item.access || "Free";
     const tags = Array.isArray(item.tags) ? item.tags : [];
     const originalUrl = (item.originalUrl || "").toString();
-    const isPremium = access.toLowerCase() === "premium";
     const copyValue = getCopyValue(item);
-    const displayText = isPremium ? tr("detail.privateMessage") : copyValue;
+    const displayText = copyValue;
 
     if (titleEl) titleEl.textContent = title;
     if (authorEl) authorEl.textContent = author;
-    if (metaEl) metaEl.textContent = `${term("type", type)} · ${term("access", access)}`;
+    if (metaEl) metaEl.textContent = term("type", type);
     if (tagsEl) tagsEl.innerHTML = tags.map(t => `<span class="tag">${term("tag", t)}</span>`).join("");
     if (imgEl) { imgEl.src = item.image || ""; imgEl.alt = title; }
     if (promptEl) promptEl.value = displayText;
@@ -240,10 +237,6 @@
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
       playButtonFeedback(copyBtn);
-      if ((item.access || "").toLowerCase() === "premium") {
-        showToast(tr("toast.premiumPrivate"));
-        return;
-      }
       const current = promptEl?.value || getCopyValue(item);
       if (!current.trim()) {
         showToast(tr("toast.noPrompt"));
