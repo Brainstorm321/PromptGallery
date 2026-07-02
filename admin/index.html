@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prompt Gallery 管理台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #111c2b;
+      --panel-2: #172538;
+      --line: #2b3a51;
+      --text: #f8fafc;
+      --muted: #9fb0c7;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #facc15;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 18% 8%, rgba(59,130,246,.24), transparent 30%), var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell { max-width: 1420px; margin: 0 auto; padding: 24px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .brand h1 { margin: 0 0 4px; font-size: clamp(26px, 4vw, 40px); }
+    .brand p { margin: 0; color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(17, 28, 43, .92);
+      border: 1px solid rgba(148, 163, 184, .22);
+      border-radius: 18px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .26);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(15, 23, 42, .64);
+    }
+    .panel-header h2 { margin: 0; font-size: 18px; }
+
+    .prompt-list { max-height: calc(100vh - 170px); overflow: auto; padding: 10px; }
+    .prompt-item {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr);
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+    }
+    .prompt-item:hover, .prompt-item.is-active { background: rgba(59, 130, 246, .12); border-color: rgba(96, 165, 250, .32); }
+    .prompt-item img { width: 74px; height: 58px; object-fit: cover; border-radius: 10px; background: #0f172a; }
+    .prompt-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prompt-item span { display: block; color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    form { padding: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field.full { grid-column: 1 / -1; }
+    label { color: #dbeafe; font-weight: 700; font-size: 13px; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, .82);
+      color: var(--text);
+      padding: 11px 12px;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96, 165, 250, .16); }
+    textarea { min-height: 130px; resize: vertical; }
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .preview-row { display: grid; grid-template-columns: minmax(170px, 260px) minmax(0, 1fr); gap: 14px; align-items: center; }
+    .preview {
+      aspect-ratio: 4 / 3;
+      border-radius: 14px;
+      border: 1px dashed rgba(148, 163, 184, .4);
+      background: #0f172a;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+    }
+    .preview img { width: 100%; height: 100%; object-fit: contain; }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      color: white;
+      background: #334155;
+      font-weight: 800;
+      min-height: 42px;
+    }
+    .btn.primary { background: var(--blue); }
+    .btn.green { background: var(--green); color: #04130a; }
+    .btn.red { background: var(--red); }
+    .btn.ghost { background: rgba(148, 163, 184, .16); color: #dbeafe; border: 1px solid rgba(148, 163, 184, .24); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .status {
+      margin-top: 14px;
+      min-height: 42px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, .72);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .badge { color: var(--yellow); font-size: 12px; font-weight: 800; }
+
+    @media (max-width: 880px) {
+      .app-shell { padding: 16px; }
+      .topbar, .actions { align-items: stretch; flex-direction: column; }
+      .layout { grid-template-columns: 1fr; }
+      .prompt-list { max-height: 360px; }
+      .form-grid, .preview-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Prompt Gallery 管理台</h1>
+        <p>电脑和 iPad 共用的本地内容管理界面。</p>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="refreshBtn" type="button">刷新列表</button>
+        <button class="btn ghost" id="buildBtn" type="button">重新生成网站数据</button>
+        <button class="btn green" id="publishBtn" type="button">一键上传 GitHub</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panel-header">
+          <h2>已收藏图片</h2>
+          <button class="btn primary" id="newBtn" type="button">新建</button>
+        </div>
+        <div class="prompt-list" id="promptList"></div>
+      </aside>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2 id="formTitle">新建收藏</h2>
+          <span class="badge" id="modeBadge">本地保存</span>
+        </div>
+        <form id="promptForm">
+          <input id="id" type="hidden" />
+          <div class="field full">
+            <label>图片</label>
+            <div class="preview-row">
+              <div class="preview" id="imagePreview">选择图片后预览</div>
+              <div>
+                <input id="imageFile" accept="image/*" type="file" />
+                <div class="hint">新建时请选择图片；编辑已有条目时，不选图片就保留原图。</div>
+                <input id="image" placeholder="保存后的图片路径会自动生成" readonly style="margin-top:10px" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="titleZh">中文名称</label>
+              <input id="titleZh" placeholder="例如：电商KV视觉图" />
+            </div>
+            <div class="field">
+              <label for="title">英文名称</label>
+              <input id="title" placeholder="例如：E-commerce KV Visual" />
+            </div>
+            <div class="field">
+              <label for="category">分类</label>
+              <select id="category"></select>
+            </div>
+            <div class="field">
+              <label for="access">权限</label>
+              <select id="access"></select>
+            </div>
+            <div class="field">
+              <label for="type">类型</label>
+              <select id="type"></select>
+            </div>
+            <div class="field">
+              <label for="author">作者名</label>
+              <input id="author" placeholder="@author" />
+            </div>
+            <div class="field full">
+              <label for="tags">标签</label>
+              <input id="tags" placeholder="concept, portrait, x-twitter" />
+              <div class="hint">用英文逗号分隔。分类决定侧边栏筛选，标签只是卡片上的小标签。</div>
+            </div>
+            <div class="field full">
+              <label for="originalUrl">来源链接 / View Original</label>
+              <input id="originalUrl" placeholder="https://x.com/..." />
+            </div>
+            <div class="field full">
+              <label for="prompt">英文 Prompt 或来源链接</label>
+              <textarea id="prompt" placeholder="提示词太长时，也可以只放来源链接。"></textarea>
+            </div>
+            <div class="field full">
+              <label for="promptZh">中文 Prompt / 说明</label>
+              <textarea id="promptZh" placeholder="中文说明或中文提示词。"></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn primary" id="saveBtn" type="submit">保存 / 更新</button>
+            <button class="btn ghost" id="translateBtn" type="button">自动翻译（下一步接入）</button>
+            <button class="btn ghost" id="openSiteBtn" type="button">打开网站预览</button>
+          </div>
+          <div class="status" id="status">准备就绪。</div>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const fields = ['id','title','titleZh','author','category','type','access','tags','image','originalUrl','prompt','promptZh'];
+    let prompts = [];
+    let categories = [];
+    let selectedId = '';
+    let selectedImageFile = null;
+
+    function setStatus(message) { $('status').textContent = message; }
+    function optionHTML(value) { return `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`; }
+    function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
+
+    async function api(path, options = {}) {
+      const res = await fetch(path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.detail || '请求失败');
+      return data;
+    }
+
+    async function load() {
+      const data = await api('/api/prompts');
+      prompts = data.prompts || [];
+      categories = data.categories || [];
+      $('category').innerHTML = categories.map(optionHTML).join('');
+      $('access').innerHTML = (data.access || ['Free','Premium']).map(optionHTML).join('');
+      $('type').innerHTML = (data.types || ['Image','Video']).map(optionHTML).join('');
+      renderList();
+      if (!selectedId) newPrompt();
+      setStatus(`已载入 ${prompts.length} 条收藏。`);
+    }
+
+    function renderList() {
+      $('promptList').innerHTML = prompts.map(item => `
+        <button class="prompt-item ${item.id === selectedId ? 'is-active' : ''}" data-id="${escapeHtml(item.id)}" type="button">
+          <img src="/${escapeHtml(item.image || '')}" alt="" />
+          <span><strong>${escapeHtml(item.titleZh || item.title || 'Untitled')}</strong><span>${escapeHtml(item.category || '')} · ${escapeHtml(item.access || '')}</span></span>
+        </button>`).join('') || '<div class="hint" style="padding:14px">还没有内容。</div>';
+      document.querySelectorAll('.prompt-item').forEach(btn => btn.addEventListener('click', () => editPrompt(btn.dataset.id)));
+    }
+
+    function setPreview(src) {
+      $('imagePreview').innerHTML = src ? `<img src="${src}" alt="预览" />` : '选择图片后预览';
+    }
+
+    function fill(item = {}) {
+      fields.forEach(name => { if ($(name)) $(name).value = Array.isArray(item[name]) ? item[name].join(', ') : (item[name] || ''); });
+      $('category').value = item.category || categories[0] || 'concept';
+      $('access').value = item.access || 'Free';
+      $('type').value = item.type || 'Image';
+      setPreview(item.image ? `/${item.image}` : '');
+      $('imageFile').value = '';
+      selectedImageFile = null;
+      selectedId = item.id || '';
+      $('formTitle').textContent = selectedId ? '编辑收藏' : '新建收藏';
+      renderList();
+    }
+
+    function newPrompt() { fill({ category: 'concept', access: 'Free', type: 'Image', author: '@unknown' }); }
+    function editPrompt(id) { const item = prompts.find(p => p.id === id); if (item) fill(item); }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function formItem() {
+      const item = {};
+      fields.forEach(name => { if ($(name)) item[name] = $(name).value.trim(); });
+      item.tags = $('tags').value.split(',').map(s => s.trim()).filter(Boolean);
+      return item;
+    }
+
+    $('imageFile').addEventListener('change', () => {
+      selectedImageFile = $('imageFile').files[0] || null;
+      if (selectedImageFile) setPreview(URL.createObjectURL(selectedImageFile));
+    });
+
+    $('promptForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        $('saveBtn').disabled = true;
+        setStatus('正在保存并生成网站数据...');
+        const dataUrl = await fileToDataUrl(selectedImageFile);
+        const result = await api('/api/prompts', {
+          method: 'POST',
+          body: JSON.stringify({
+            item: formItem(),
+            imageFile: dataUrl ? { name: selectedImageFile.name, dataUrl } : null
+          })
+        });
+        selectedId = result.item.id;
+        await load();
+        editPrompt(selectedId);
+        setStatus(`已保存：${result.item.titleZh || result.item.title}\n网站数据已重新生成。`);
+      } catch (error) {
+        setStatus(`保存失败：${error.message}`);
+      } finally {
+        $('saveBtn').disabled = false;
+      }
+    });
+
+    $('newBtn').addEventListener('click', newPrompt);
+    $('refreshBtn').addEventListener('click', load);
+    $('buildBtn').addEventListener('click', async () => {
+      try { const result = await api('/api/build', { method: 'POST', body: '{}' }); setStatus(`已重新生成网站数据：${result.built.count} 条。`); }
+      catch (error) { setStatus(`生成失败：${error.message}`); }
+    });
+    $('publishBtn').addEventListener('click', async () => {
+      if (!confirm('确定要提交并上传到 GitHub 吗？')) return;
+      try {
+        $('publishBtn').disabled = true;
+        setStatus('正在提交并上传 GitHub...');
+        const result = await api('/api/publish', { method: 'POST', body: '{}' });
+        setStatus(`上传完成。\n${result.output || ''}`);
+      } catch (error) {
+        setStatus(`上传失败：${error.message}`);
+      } finally {
+        $('publishBtn').disabled = false;
+      }
+    });
+    $('translateBtn').addEventListener('click', () => setStatus('自动翻译按钮已预留。下一步接入 OpenAI API 后，就可以根据中文/英文自动补齐另一种语言。'));
+    $('openSiteBtn').addEventListener('click', () => window.open('/index.html', '_blank'));
+
+    load().catch(error => setStatus(`载入失败：${error.message}`));
+  </script>
+</body>
+</html>
