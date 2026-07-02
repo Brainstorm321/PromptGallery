@@ -1,4 +1,4 @@
-// prompts.js - prompt gallery data
+// prompts.js - public prompt gallery data.
 window.PROMPTS = [
   {
     "id": "design-a-minimalist-poster-with-high-end-commercial-aesthetics",
@@ -7,7 +7,6 @@ window.PROMPTS = [
     "author": "小小东@xiaoxiaodong01",
     "category": "commercial",
     "type": "Image",
-    "access": "Free",
     "tags": [
       "品牌视觉，封面，名片"
     ],
