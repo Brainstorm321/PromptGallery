@@ -25,6 +25,19 @@
     return i18n.promptTitle ? i18n.promptTitle(p) : (p.title || 'Untitled');
   }
 
+  function listValues(value) {
+    if (Array.isArray(value)) return value.map(String).map(s => s.trim()).filter(Boolean);
+    return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  function categoryValues(p) {
+    return listValues(p.category || 'concept').map(value => value.toLowerCase());
+  }
+
+  function categoryLabel(p) {
+    return categoryValues(p).map(value => term('category', value)).join(', ');
+  }
+
   function getSelectedValue(name) {
     const el = document.querySelector(`input[name="${name}"]:checked`);
     return el ? el.value : 'all';
@@ -35,12 +48,13 @@
     const type = (typeSelect?.value || 'all').toLowerCase();
     const selectedCat = getSelectedValue('category');
 
-    if(selectedCat !== 'all' && (p.category || '').toLowerCase() !== selectedCat.toLowerCase()) return false;
+    if(selectedCat !== 'all' && !categoryValues(p).includes(selectedCat.toLowerCase())) return false;
     if(type !== 'all' && (p.type || 'image').toLowerCase() !== type) return false;
 
     if(!q) return true;
     const hay = [
-      p.title, p.titleZh, promptTitle(p), p.subtitle, p.author, p.creator, p.model, p.category, term('category', p.category),
+      p.title, p.titleZh, promptTitle(p), p.subtitle, p.author, p.creator, p.model,
+      ...categoryValues(p), ...categoryValues(p).map(cat => term('category', cat)),
       ...(p.tags || []), ...(p.tags || []).map(tag => term('tag', tag))
     ].join(' ').toLowerCase();
     return hay.includes(q);
@@ -71,7 +85,7 @@
     )).join('');
     const copyTitle = tr('gallery.copyPrompt');
 
-    const imageFitClass = p.category === 'portrait'
+    const imageFitClass = categoryValues(p).includes('portrait')
       ? 'object-cover object-top'
       : 'object-cover object-center';
 
@@ -95,7 +109,7 @@
           <div class="text-xl font-bold mb-2">${escapeHtml(promptTitle(p))}</div>
           <div class="flex flex-wrap gap-2 mb-4">${tagPills}</div>
           <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-300">${escapeHtml(tr('gallery.category'))} <span class="text-gray-100 font-semibold">${escapeHtml(term('category', p.category))}</span></div>
+            <div class="text-sm text-gray-300">${escapeHtml(tr('gallery.category'))} <span class="text-gray-100 font-semibold">${escapeHtml(categoryLabel(p))}</span></div>
           </div>
         </div>
       </div>`;

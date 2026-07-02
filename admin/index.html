@@ -104,6 +104,29 @@
     input:focus, select:focus, textarea:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96, 165, 250, .16); }
     textarea { min-height: 130px; resize: vertical; }
     .hint { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .choice-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .choice-pill { position: relative; display: inline-flex; align-items: center; }
+    .choice-pill input { position: absolute; opacity: 0; pointer-events: none; }
+    .choice-pill span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, .28);
+      background: rgba(30, 41, 59, .78);
+      color: #dbeafe;
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+      user-select: none;
+    }
+    .choice-pill input:checked + span {
+      border-color: rgba(96, 165, 250, .9);
+      background: rgba(37, 99, 235, .34);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .13);
+    }
 
     .preview-row { display: grid; grid-template-columns: minmax(170px, 260px) minmax(0, 1fr); gap: 14px; align-items: center; }
     .preview {
@@ -253,19 +276,11 @@
               <label for="title">英文名称</label>
               <input id="title" placeholder="例如：E-commerce KV Visual" />
             </div>
-            <div class="field">
-              <label for="category">分类</label>
-              <select id="category">
-                <option value="cityscape">cityscape</option>
-                <option value="portrait">portrait</option>
-                <option value="scene">scene</option>
-                <option value="concept">concept</option>
-                <option value="design">design</option>
-                <option value="product">product</option>
-                <option value="commercial">commercial</option>
-                <option value="workflow">workflow</option>
-                <option value="tutorial">tutorial</option>
-              </select>
+            <div class="field full">
+              <label for="category">??</label>
+              <div class="choice-grid" id="categoryChoices"></div>
+              <input id="category" placeholder="concept, commercial" readonly />
+              <div class="hint">可以选择一个或多个分类；前台侧边栏筛选命中任意一个分类都会显示。</div>
             </div>
             <div class="field">
               <label for="access">权限</label>
@@ -286,9 +301,10 @@
               <input id="author" placeholder="@author" />
             </div>
             <div class="field full">
-              <label for="tags">标签</label>
-              <input id="tags" placeholder="concept, portrait, x-twitter" />
-              <div class="hint">用英文逗号分隔。分类决定侧边栏筛选，标签只是卡片上的小标签。</div>
+              <label for="tags">??</label>
+              <div class="choice-grid" id="tagChoices"></div>
+              <input id="tags" placeholder="concept, commercial, x.com" />
+              <div class="hint">可以点选常用标签，也可以手动补充；保存时会自动按英文逗号分隔。</div>
             </div>
             <div class="field full">
               <label for="originalUrl">来源链接 / View Original</label>
@@ -325,11 +341,48 @@
     let selectedImageFile = null;
     let previewObjectUrl = '';
     let translationSettings = { hasOpenAIKey: false, model: 'gpt-4.1-mini' };
+    let tagOptions = [];
 
     function setStatus(message) { $('status').textContent = message; }
     function setListMessage(message) { $('promptList').innerHTML = '<div class="hint" style="padding:14px">' + escapeHtml(message) + '</div>'; }
     function optionHTML(value) { return `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`; }
     function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
+    function listValues(value) {
+      if (Array.isArray(value)) return value.map(String).map(s => s.trim()).filter(Boolean);
+      return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
+    }
+    function uniqueValues(values) {
+      const seen = new Set();
+      return values.map(String).map(s => s.trim()).filter(Boolean).filter(value => {
+        const key = value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+    function formatList(value) { return listValues(value).join(', '); }
+    function setCommaValue(inputId, values) { $(inputId).value = uniqueValues(values).join(', '); }
+    function renderChoiceGroup(containerId, inputId, values) {
+      const container = $(containerId);
+      if (!container) return;
+      container.innerHTML = values.map(value =>
+        '<label class="choice-pill"><input type="checkbox" value="' + escapeHtml(value) + '"><span>' + escapeHtml(value) + '</span></label>'
+      ).join('');
+      container.querySelectorAll('input[type="checkbox"]').forEach(box => {
+        box.addEventListener('change', () => {
+          const checked = Array.from(container.querySelectorAll('input:checked')).map(item => item.value);
+          const current = listValues($(inputId).value).filter(value => !values.some(option => option.toLowerCase() === value.toLowerCase()));
+          setCommaValue(inputId, [...checked, ...current]);
+        });
+      });
+      syncChoiceGroupFromInput(containerId, inputId);
+    }
+    function syncChoiceGroupFromInput(containerId, inputId) {
+      const container = $(containerId);
+      if (!container) return;
+      const selected = new Set(listValues($(inputId).value).map(value => value.toLowerCase()));
+      container.querySelectorAll('input[type="checkbox"]').forEach(box => { box.checked = selected.has(box.value.toLowerCase()); });
+    }
 
     async function api(path, options = {}) {
       if (location.protocol === 'file:') {
@@ -348,7 +401,9 @@
       const data = await api('/api/prompts');
       prompts = data.prompts || [];
       categories = data.categories || [];
-      $('category').innerHTML = categories.map(optionHTML).join('');
+      tagOptions = uniqueValues([...categories, 'x.com', 'x-twitter', 'brand-visual', 'cover', 'business-card']);
+      renderChoiceGroup('categoryChoices', 'category', categories);
+      renderChoiceGroup('tagChoices', 'tags', tagOptions);
       $('access').innerHTML = (data.access || ['Free','Premium']).map(optionHTML).join('');
       $('type').innerHTML = (data.types || ['Image','Video']).map(optionHTML).join('');
       renderList();
@@ -367,7 +422,7 @@
       $('promptList').innerHTML = prompts.map(item =>
         '<button class="prompt-item ' + (item.id === selectedId ? 'is-active' : '') + '" data-id="' + escapeHtml(item.id) + '" type="button">' +
           '<img src="/' + escapeHtml(item.image || '') + '" alt="" />' +
-          '<span><strong>' + escapeHtml(item.titleZh || item.title || 'Untitled') + '</strong><span>' + escapeHtml(item.category || '') + ' - ' + escapeHtml(item.access || '') + '</span></span>' +
+          '<span><strong>' + escapeHtml(item.titleZh || item.title || 'Untitled') + '</strong><span>' + escapeHtml(formatList(item.category)) + ' - ' + escapeHtml(item.access || '') + '</span></span>' +
         '</button>'
       ).join('') || '<div class="hint" style="padding:14px">No saved prompt records yet. This list shows records, not loose files in assets/images.</div>';
       document.querySelectorAll('.prompt-item').forEach(btn => btn.addEventListener('click', () => editPrompt(btn.dataset.id)));
@@ -431,7 +486,10 @@
 
     function fill(item = {}) {
       fields.forEach(name => { if ($(name)) $(name).value = Array.isArray(item[name]) ? item[name].join(', ') : (item[name] || ''); });
-      $('category').value = item.category || categories[0] || 'concept';
+      setCommaValue('category', listValues(item.category || categories[0] || 'concept'));
+      setCommaValue('tags', listValues(item.tags));
+      syncChoiceGroupFromInput('categoryChoices', 'category');
+      syncChoiceGroupFromInput('tagChoices', 'tags');
       $('access').value = item.access || 'Free';
       $('type').value = item.type || 'Image';
       selectedId = item.id || '';
@@ -446,7 +504,7 @@
       renderList();
     }
 
-    function newPrompt() { fill({ category: 'concept', access: 'Free', type: 'Image', author: '@unknown' }); }
+    function newPrompt() { fill({ category: ['concept'], access: 'Free', type: 'Image', author: '@unknown' }); }
     function editPrompt(id) { const item = prompts.find(p => p.id === id); if (item) fill(item); }
 
 
@@ -489,10 +547,13 @@
     function formItem() {
       const item = {};
       fields.forEach(name => { if ($(name)) item[name] = $(name).value.trim(); });
-      item.tags = $('tags').value.split(',').map(s => s.trim()).filter(Boolean);
+      item.category = listValues($('category').value);
+      item.tags = listValues($('tags').value);
       return item;
     }
 
+    $('category').addEventListener('input', () => syncChoiceGroupFromInput('categoryChoices', 'category'));
+    $('tags').addEventListener('input', () => syncChoiceGroupFromInput('tagChoices', 'tags'));
     $('chooseImageBtn').addEventListener('click', () => $('imageFile').click());
     $('pasteImageBtn').addEventListener('click', pasteImageFromClipboard);
     $('clearImageBtn').addEventListener('click', clearSelectedImageFile);

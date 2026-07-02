@@ -23,6 +23,15 @@
     return i18n.term ? i18n.term(group, value) : (value || "");
   }
 
+  function listValues(value) {
+    if (Array.isArray(value)) return value.map(String).map(s => s.trim()).filter(Boolean);
+    return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  function categoryLabel(item) {
+    return listValues(item.category || 'concept').map(value => term('category', value)).join(', ');
+  }
+
   function promptTitle(item) {
     return i18n.promptTitle ? i18n.promptTitle(item) : (item.title || "Untitled");
   }
@@ -214,7 +223,7 @@
 
     if (titleEl) titleEl.textContent = title;
     if (authorEl) authorEl.textContent = author;
-    if (metaEl) metaEl.textContent = term("type", type);
+    if (metaEl) metaEl.textContent = term("type", type) + " ? " + categoryLabel(item);
     if (tagsEl) tagsEl.innerHTML = tags.map(t => `<span class="tag">${term("tag", t)}</span>`).join("");
     if (imgEl) { imgEl.src = item.image || ""; imgEl.alt = title; }
     if (promptEl) promptEl.value = displayText;

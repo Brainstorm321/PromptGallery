@@ -132,13 +132,13 @@
       category: { all: 'All', cityscape: 'Cityscape', portrait: 'Portrait', scene: 'Scene', concept: 'Concept', design: 'Design', product: 'Product', commercial: 'Commercial', workflow: 'Workflow', tutorial: 'Tutorial' },
       access: { free: 'Free', premium: 'Premium' },
       type: { all: 'All', image: 'Image', video: 'Video' },
-      tag: { concept: 'concept', portrait: 'portrait', 'x-twitter': 'x-twitter', 'x.com': 'X.com', cityscape: 'cityscape', vibrant: 'vibrant', sunset: 'sunset', scene: 'scene', enchanted: 'enchanted', forest: 'forest', pathway: 'pathway', 'brand-visual': 'brand visual', cover: 'cover', 'business-card': 'business card' }
+      tag: { cityscape: 'cityscape', portrait: 'portrait', scene: 'scene', concept: 'concept', design: 'design', product: 'product', commercial: 'commercial', workflow: 'workflow', tutorial: 'tutorial', 'x.com': 'X.com', 'x-twitter': 'x-twitter', vibrant: 'vibrant', sunset: 'sunset', enchanted: 'enchanted', forest: 'forest', pathway: 'pathway', 'brand-visual': 'brand visual', cover: 'cover', 'business-card': 'business card' }
     },
     zh: {
       category: { all: '全部', cityscape: '城市景观', portrait: '人像', scene: '场景', concept: '概念', design: '设计', product: '产品', commercial: '商业', workflow: '工作流', tutorial: '教程' },
       access: { free: '免费', premium: '高级' },
       type: { all: '全部', image: '图片', video: '视频' },
-      tag: { concept: '概念', portrait: '人像', 'x-twitter': 'X/Twitter', 'x.com': 'X.com', cityscape: '城市景观', vibrant: '鲜艳', sunset: '日落', scene: '场景', enchanted: '魔法', forest: '森林', pathway: '小径', 'brand-visual': '品牌视觉', cover: '封面', 'business-card': '名片' }
+      tag: { cityscape: '城市景观', portrait: '人像', scene: '场景', concept: '概念', design: '设计', product: '产品', commercial: '商业', workflow: '工作流', tutorial: '教程', 'x.com': 'X.com', 'x-twitter': 'X/Twitter', vibrant: '鲜艳', sunset: '日落', enchanted: '魔法', forest: '森林', pathway: '小径', 'brand-visual': '品牌视觉', cover: '封面', 'business-card': '名片' }
     }
   };
 

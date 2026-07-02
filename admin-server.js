@@ -248,13 +248,20 @@ function normalizeTags(value) {
   return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
 }
 
+function normalizeCategories(value) {
+  const values = normalizeTags(value).map(s => s.toLowerCase());
+  const unique = [...new Set(values)].filter(value => CATEGORY_VALUES.includes(value));
+  const next = unique.length ? unique : ['concept'];
+  return next.length === 1 ? next[0] : next;
+}
+
 function normalizePrompt(item, existing) {
   const next = {
     id: String(item.id || existing?.id || slugify(item.title || item.titleZh, 'prompt')).trim(),
     title: String(item.title || existing?.title || 'Untitled').trim(),
     titleZh: String(item.titleZh || existing?.titleZh || '').trim(),
     author: String(item.author || existing?.author || '@unknown').trim(),
-    category: String(item.category || existing?.category || 'concept').trim().toLowerCase(),
+    category: normalizeCategories(item.category ?? existing?.category ?? 'concept'),
     type: String(item.type || existing?.type || 'Image').trim(),
     access: String(item.access || existing?.access || 'Free').trim(),
     tags: normalizeTags(item.tags ?? existing?.tags),
@@ -264,7 +271,7 @@ function normalizePrompt(item, existing) {
     promptZh: String(item.promptZh || existing?.promptZh || '')
   };
 
-  if (!CATEGORY_VALUES.includes(next.category)) next.category = 'concept';
+  next.category = normalizeCategories(next.category);
   if (!TYPE_VALUES.includes(next.type)) next.type = 'Image';
   if (!ACCESS_VALUES.includes(next.access)) next.access = 'Free';
   if (!next.titleZh) delete next.titleZh;
