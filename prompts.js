@@ -2,8 +2,8 @@
 window.PROMPTS = [
   {
     id: "gemini-portrait-test",
-    title: "X Link Test Masterpiece",
-    titleZh: "X 链接测试佳作",
+    title: "E-commerce KV Visual",
+    titleZh: "电商KV视觉图",
     author: "@yyyole",
     category: "portrait",
     type: "Image",

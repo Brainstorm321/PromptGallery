@@ -144,7 +144,7 @@
 
   const promptTitles = {
     zh: {
-      'gemini-portrait-test': 'X 链接测试佳作',
+      'gemini-portrait-test': '电商KV视觉图',
       'vibrant-scene-at-sunset': '日落活力城市景观',
       'enchanted-forest-pathway': '魔法森林小径'
     }
@@ -279,10 +279,11 @@
       });
     }
 
-    const switcherLabel = document.querySelector('#languageSwitcher span');
-    const switcherSelect = document.getElementById('languageSelect');
+    const switcherLabel = document.querySelector('#languageSwitcher [data-language-label]');
+    const switcherToggle = document.getElementById('languageToggle');
     if (switcherLabel) switcherLabel.textContent = t('language.label');
-    if (switcherSelect) switcherSelect.setAttribute('aria-label', t('language.label'));
+    if (switcherToggle) switcherToggle.setAttribute('aria-label', t('language.label'));
+    updateLanguageSwitcher();
 
     const detailBack = document.getElementById('backToGallery');
     if (detailBack) detailBack.textContent = `← ${t('detail.back')}`;
@@ -296,29 +297,72 @@
     if (viewOriginalBtn) viewOriginalBtn.innerHTML = `<i class="bi bi-box-arrow-up-right"></i>${t('detail.viewOriginal')}`;
   }
 
+  function languageMeta(lang) {
+    return lang === 'zh'
+      ? { label: '中文', flag: 'flag-cn' }
+      : { label: 'EN', flag: 'flag-us' };
+  }
+
+  function updateLanguageSwitcher() {
+    const toggle = document.getElementById('languageToggle');
+    if (!toggle) return;
+    const meta = languageMeta(currentLang);
+    toggle.innerHTML = `<span class="flag-icon ${meta.flag}" aria-hidden="true"></span><span data-current-language>${meta.label}</span><i class="bi bi-chevron-down text-xs"></i>`;
+    document.querySelectorAll('[data-language-option]').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.lang === currentLang);
+    });
+  }
+
+  function closeLanguageMenu() {
+    const menu = document.getElementById('languageMenu');
+    const toggle = document.getElementById('languageToggle');
+    if (menu) menu.classList.add('hidden');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  }
+
   function createLanguageSwitcher() {
     if (document.getElementById('languageSwitcher')) return;
     const wrap = document.createElement('div');
     wrap.id = 'languageSwitcher';
     wrap.className = 'fixed top-4 right-4 z-[120] flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/80 px-3 py-2 text-sm text-white shadow-lg backdrop-blur';
     wrap.innerHTML = `
-      <span class="hidden sm:inline text-slate-300">${t('language.label')}</span>
-      <select aria-label="${t('language.label')}" class="bg-transparent text-white outline-none" id="languageSelect">
-        <option value="en">EN</option>
-        <option value="zh">中文</option>
-      </select>`;
+      <span class="hidden sm:inline text-slate-300" data-language-label>${t('language.label')}</span>
+      <div class="language-picker">
+        <button aria-expanded="false" aria-haspopup="true" aria-label="${t('language.label')}" class="language-toggle" id="languageToggle" type="button"></button>
+        <div class="language-menu hidden" id="languageMenu">
+          <button class="language-option" data-language-option data-lang="en" type="button"><span class="flag-icon flag-us" aria-hidden="true"></span><span>EN</span></button>
+          <button class="language-option" data-language-option data-lang="zh" type="button"><span class="flag-icon flag-cn" aria-hidden="true"></span><span>中文</span></button>
+        </div>
+      </div>`;
     document.body.appendChild(wrap);
-    const select = document.getElementById('languageSelect');
-    select.value = currentLang;
-    select.addEventListener('change', () => setLanguage(select.value));
-  }
 
+    const toggle = document.getElementById('languageToggle');
+    const menu = document.getElementById('languageMenu');
+    updateLanguageSwitcher();
+
+    toggle.addEventListener('click', event => {
+      event.stopPropagation();
+      const isHidden = menu.classList.toggle('hidden');
+      toggle.setAttribute('aria-expanded', String(!isHidden));
+    });
+
+    menu.querySelectorAll('[data-language-option]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.stopPropagation();
+        setLanguage(btn.dataset.lang);
+        closeLanguageMenu();
+      });
+    });
+
+    document.addEventListener('click', event => {
+      if (!wrap.contains(event.target)) closeLanguageMenu();
+    });
+  }
   function setLanguage(lang) {
     currentLang = normalize(lang);
     localStorage.setItem(STORAGE_KEY, currentLang);
     applyStatic();
-    const select = document.getElementById('languageSelect');
-    if (select) select.value = currentLang;
+    updateLanguageSwitcher();
     window.dispatchEvent(new CustomEvent('prompt-gallery-language-change', { detail: { lang: currentLang } }));
   }
 
