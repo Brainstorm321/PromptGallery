@@ -92,6 +92,36 @@
     .field { display: flex; flex-direction: column; gap: 7px; }
     .field.full { grid-column: 1 / -1; }
     label { color: #dbeafe; font-weight: 700; font-size: 13px; }
+    .field-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .mini-copy-btn {
+      border: 1px solid rgba(96, 165, 250, .38);
+      border-radius: 999px;
+      background: rgba(59, 130, 246, .16);
+      color: #bfdbfe;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      min-height: 30px;
+    }
+    .mini-copy-btn:hover { background: rgba(59, 130, 246, .28); color: #fff; }
+    .access-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 12px 0;
+      background: rgba(15, 23, 42, .42);
+    }
+    .access-tab {
+      flex: 1;
+      border: 1px solid rgba(148, 163, 184, .28);
+      border-radius: 999px;
+      background: rgba(30, 41, 59, .72);
+      color: #dbeafe;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 850;
+      min-height: 36px;
+    }
+    .access-tab.is-active { background: rgba(59, 130, 246, .34); border-color: rgba(96, 165, 250, .82); color: #fff; }
     input, select, textarea {
       width: 100%;
       border: 1px solid var(--line);
@@ -239,6 +269,11 @@
             <button class="btn primary" id="newBtn" type="button">&#26032;&#24314;</button>
           </div>
         </div>
+        <div class="access-tabs" aria-label="Access filter">
+          <button class="access-tab is-active" data-list-access="all" type="button">全部</button>
+          <button class="access-tab" data-list-access="Free" type="button">Free</button>
+          <button class="access-tab" data-list-access="Premium" type="button">Premium</button>
+        </div>
         <div class="prompt-list" id="promptList"><div class="hint" style="padding:14px">Loading saved records...</div></div>
       </aside>
 
@@ -311,12 +346,18 @@
               <input id="originalUrl" placeholder="https://x.com/..." />
             </div>
             <div class="field full">
-              <label for="prompt">英文 Prompt 或来源链接</label>
-              <textarea id="prompt" placeholder="提示词太长时，也可以只放来源链接。"></textarea>
+              <div class="field-heading">
+                <label for="promptZh">中文 Prompt / 说明</label>
+                <button class="mini-copy-btn" data-copy-field="promptZh" type="button">复制中文</button>
+              </div>
+              <textarea id="promptZh" placeholder="中文说明或中文提示词。"></textarea>
             </div>
             <div class="field full">
-              <label for="promptZh">中文 Prompt / 说明</label>
-              <textarea id="promptZh" placeholder="中文说明或中文提示词。"></textarea>
+              <div class="field-heading">
+                <label for="prompt">英文 Prompt 或来源链接</label>
+                <button class="mini-copy-btn" data-copy-field="prompt" type="button">复制英文</button>
+              </div>
+              <textarea id="prompt" placeholder="提示词太长时，也可以只放来源链接。"></textarea>
             </div>
           </div>
 
@@ -342,6 +383,7 @@
     let previewObjectUrl = '';
     let translationSettings = { hasOpenAIKey: false, model: 'gpt-4.1-mini' };
     let tagOptions = [];
+    let listAccessFilter = 'all';
 
     function setStatus(message) { $('status').textContent = message; }
     function setListMessage(message) { $('promptList').innerHTML = '<div class="hint" style="padding:14px">' + escapeHtml(message) + '</div>'; }
@@ -401,7 +443,7 @@
       const data = await api('/api/prompts');
       prompts = data.prompts || [];
       categories = data.categories || [];
-      tagOptions = uniqueValues([...categories, 'x.com', 'x-twitter', 'Gemini', 'ChatGPT', 'brand-visual', 'cover', 'business-card']);
+      tagOptions = uniqueValues([...categories, 'x.com', 'x-twitter', 'Gemini', 'ChatGPT', 'Gems', 'GPTs', 'brand-visual', 'cover', 'business-card']);
       renderChoiceGroup('categoryChoices', 'category', categories);
       renderChoiceGroup('tagChoices', 'tags', tagOptions);
       $('access').innerHTML = (data.access || ['Free','Premium']).map(optionHTML).join('');
@@ -412,19 +454,21 @@
     }
 
     function renderList() {
+      const visiblePrompts = listAccessFilter === 'all'
+        ? prompts
+        : prompts.filter(item => String(item.access || 'Free').toLowerCase() === listAccessFilter.toLowerCase());
       const jump = $('promptJump');
       if (jump) {
-        jump.innerHTML = '<option value="">&#24555;&#36895;&#23450;&#20301;</option>' + prompts.map(item =>
+        jump.innerHTML = '<option value="">&#24555;&#36895;&#23450;&#20301;</option>' + visiblePrompts.map(item =>
           '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.titleZh || item.title || 'Untitled') + '</option>'
         ).join('');
-        jump.value = selectedId || '';
+        jump.value = visiblePrompts.some(item => item.id === selectedId) ? selectedId : '';
       }
-      $('promptList').innerHTML = prompts.map(item =>
+      $('promptList').innerHTML = visiblePrompts.map(item =>
         '<button class="prompt-item ' + (item.id === selectedId ? 'is-active' : '') + '" data-id="' + escapeHtml(item.id) + '" type="button">' +
           '<img src="/' + escapeHtml(item.image || '') + '" alt="" />' +
           '<span><strong>' + escapeHtml(item.titleZh || item.title || 'Untitled') + '</strong><span>' + escapeHtml(formatList(item.category)) + ' - ' + escapeHtml(item.access || '') + '</span></span>' +
-        '</button>'
-      ).join('') || '<div class="hint" style="padding:14px">No saved prompt records yet. This list shows records, not loose files in assets/images.</div>';
+        '</button>'      ).join('') || '<div class="hint" style="padding:14px">当前分类下还没有收藏。</div>';
       document.querySelectorAll('.prompt-item').forEach(btn => btn.addEventListener('click', () => editPrompt(btn.dataset.id)));
       const active = document.querySelector('.prompt-item.is-active');
       if (active) active.scrollIntoView({ block: 'nearest' });
@@ -552,6 +596,35 @@
       return item;
     }
 
+    async function copyFieldValue(fieldId, label) {
+      const value = ($(fieldId)?.value || '').trim();
+      if (!value) {
+        setStatus(label + '为空，没有可复制的内容。');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(value);
+      } catch (error) {
+        const field = $(fieldId);
+        field.focus();
+        field.select();
+        document.execCommand('copy');
+      }
+      setStatus(label + '已复制。');
+    }
+
+    document.querySelectorAll('[data-copy-field]').forEach(btn => {
+      btn.addEventListener('click', () => copyFieldValue(btn.dataset.copyField, btn.dataset.copyField === 'promptZh' ? '中文 Prompt' : '英文 Prompt'));
+    });
+
+    document.querySelectorAll('[data-list-access]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        listAccessFilter = btn.dataset.listAccess || 'all';
+        document.querySelectorAll('[data-list-access]').forEach(item => item.classList.toggle('is-active', item === btn));
+        renderList();
+      });
+    });
+
     $('category').addEventListener('input', () => syncChoiceGroupFromInput('categoryChoices', 'category'));
     $('tags').addEventListener('input', () => syncChoiceGroupFromInput('tagChoices', 'tags'));
     $('chooseImageBtn').addEventListener('click', () => $('imageFile').click());
@@ -613,6 +686,12 @@
       catch (error) { setStatus(`生成失败：${error.message}`); }
     });
     $('publishBtn').addEventListener('click', async () => {
+      const currentItem = formItem();
+      if (String(currentItem.access || '').toLowerCase() === 'premium') {
+        alert('当前条目是 Premium，本地私密内容不会上传 GitHub。请先切换到 Free 或选择其它 Free 条目后再上传。');
+        setStatus('已阻止上传：当前表单是 Premium 私密条目。');
+        return;
+      }
       if (!confirm('确定要提交并上传到 GitHub 吗？')) return;
       try {
         $('publishBtn').disabled = true;
