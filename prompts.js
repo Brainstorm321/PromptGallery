@@ -1,6 +1,75 @@
 // prompts.js - public prompt gallery data.
 window.PROMPTS = [
   {
+    "id": "minion-with-banner",
+    "title": "Minion With Banner",
+    "titleZh": "手持横幅的小黄人",
+    "author": "Brainstorming",
+    "category": [
+      "concept",
+      "design"
+    ],
+    "type": "Image",
+    "tags": [
+      "concept",
+      "design",
+      "Artistly"
+    ],
+    "image": "assets/images/minion-with-banner-mr4oewtw.webp",
+    "originalUrl": "",
+    "prompt": "The Minion is flying in mid-air, positioned slightly off-center to the right, with a big, joyful girl grin. she is holding a bright yellow banner with 'OpenCode' written in bold, large, white letters. The background is a simple, solid color with a soft gradient from light blue to white, ensuring the Minion stands out. The overall mood is cheerful and energetic.",
+    "promptZh": "小黄人悬浮在半空中，位置略微偏向右侧中心，脸上带着大大的、欢快的笑容。她手持一条亮黄色的横幅，上面用粗体、大号白色字体写着“OpenCode”。背景是简单的纯色，带有从浅蓝色到白色的柔和渐变，确保小黄人突出醒目。整体氛围欢快而充满活力。"
+  },
+  {
+    "id": "cartoon-style-of-toilet-paper",
+    "title": "Cartoon-style of toilet paper",
+    "titleZh": "卡通厕纸",
+    "author": "Brainstorming",
+    "category": "design",
+    "type": "Image",
+    "tags": [
+      "design",
+      "Artistly"
+    ],
+    "image": "assets/images/cartoon-style-of-toilet-paper-mr4o7wcv.webp",
+    "originalUrl": "",
+    "prompt": "A cartoon-style roll of toilet paper with a surprised and shocked facial expression, featuring large brown eyes, raised eyebrows, and an open mouth, is mounted on a gold toilet paper holder attached to a beige tiled wall, with a strip of toilet paper hanging down from the roll, and the image is framed by a vertical brown border on either side.",
+    "promptZh": "一卷卡通风格的厕纸，带有惊讶和震惊的面部表情，拥有大大的棕色眼睛、扬起的眉毛和张开的嘴巴，安装在固定在米色瓷砖墙上的金色厕纸架上，一条厕纸从卷筒上垂下，图像两侧由垂直的棕色边框框住。"
+  },
+  {
+    "id": "logo",
+    "title": "logo",
+    "titleZh": "图标",
+    "author": "Brainstorming",
+    "category": "design",
+    "type": "Image",
+    "tags": [
+      "design",
+      "Artistly"
+    ],
+    "image": "assets/images/logo-mr4nxyfd.webp",
+    "originalUrl": "",
+    "prompt": "An eco-friendly conceptual logo featuring a stylized white house with a bright green gabled roof and a small grey chimney. The house is encircled by a sweeping, dynamic green ribbon that swirls around it, morphing into two vibrant green leaves at the top left, complete with subtle, glossy dew droplets. The house itself has a simple four-pane window showing a light blue reflection. The design is clean, modern, and minimalist, set against a plain transparent background, emphasizing sustainability, green energy, and environmental awareness. The lighting is bright and even with soft gradients on the leaves and roof to add a sense of three-dimensional depth and a polished, professional finish. Vector illustration, minimalist logo, flat design, clean lines, corporate identity, environmental branding, green energy icon, modern graphic design, high resolution, digital art, smooth gradients, crisp edges, eco logo, sustainable concept, 2D vector, Adobe Illustrator style, professional branding, simple shape design, vibrant green palette, transparent background, web icon style",
+    "promptZh": "一个环保概念标志，包含一个风格化的白色房屋，配有亮绿色的山墙屋顶和一个小灰色烟囱。房屋被一条流畅、动态的绿色丝带环绕，丝带在左上角演变成两片鲜艳的绿色叶子，并带有微妙的光泽露珠。房屋本身有一个简单的四格窗户，显示出浅蓝色的反射。设计简洁、现代且极简主义，背景为纯透明背景，强调可持续性、绿色能源和环境意识。光线明亮均匀，叶子和屋顶上有柔和的渐变，以增加三维深度感和抛光的专业效果。矢量插图，极简标志，扁平设计，线条清晰，企业标识，环境品牌，绿色能源图标，现代平面设计，高分辨率，数字艺术，平滑渐变，边缘清晰，生态标志，可持续概念，2D矢量，Adobe Illustrator风格，专业品牌，简单形状设计，鲜艳的绿色调色板，透明背景，网络图标风格"
+  },
+  {
+    "id": "icon",
+    "title": "Icon",
+    "titleZh": "图标",
+    "author": "Brainstorming",
+    "category": "design",
+    "type": "Image",
+    "tags": [
+      "design",
+      "icon",
+      "Artistly"
+    ],
+    "image": "assets/images/icon-mr4nsmxx.webp",
+    "originalUrl": "",
+    "prompt": "A whimsical and humorous cartoon illustration of a single giant eyeball character engaged in a workout. The central eyeball is perfectly circular with a bright blue iris featuring radiating lines and a glossy black pupil with white highlights. It has thin, stick-like black arms and legs, wearing red and white sneakers on its feet. The character is lifting two heavy, red, multi-plate dumbbells with a determined expression, holding them aloft with gloved white cartoon hands. The background is a clean, solid, isolated white, emphasizing the bold colors and clean outlines of the character. The lighting is bright and flat, characteristic of classic 3D animation, with soft cel-shading on the eyeball to give it a slight three-dimensional curve. Vector illustration, cartoon style, flat design, bold outlines, clean lines, cel-shaded, isolated on white background, 3D animation style, vibrant colors, playful, humorous mascot, graphic design, clip art, high contrast, digital art, smooth gradients, minimalist background, fitness concept, anthropomorphic character, sharp focus, SVG style, commercial art.",
+    "promptZh": "一幅充满奇思妙想和幽默感的卡通插画，描绘了一个正在锻炼的巨型眼球角色。中央的眼球呈完美的圆形，拥有明亮的蓝色虹膜，带有放射状线条，以及带有白色高光的亮黑色瞳孔。它有细长的、像棍子一样的黑色手臂和腿，脚上穿着红白相间的运动鞋。这个角色表情坚定，举起两个沉重的、红色的、多片杠铃片组成的哑铃，用戴着白色手套的卡通手将它们高高举起。背景是干净、纯色、孤立的白色，突出了角色大胆的色彩和清晰的轮廓。光线明亮而平坦，具有经典3D动画的特征，眼球上有柔和的赛璐珞阴影，使其呈现出轻微的三维曲线。矢量插画，卡通风格，扁平设计，粗线条，干净的线条，赛璐珞阴影，白色背景隔离，3D动画风格，鲜艳的色彩，俏皮，幽默吉祥物，平面设计，剪贴画，高对比度，数字艺术，平滑渐变，极简主义背景，健身概念，拟人化角色，清晰对焦，SVG风格，商业艺术。"
+  },
+  {
     "id": "advertisement-mr4n0d6r",
     "title": "Advertisement",
     "titleZh": "广告",
