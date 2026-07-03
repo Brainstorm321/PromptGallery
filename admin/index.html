@@ -253,7 +253,7 @@
       <div class="actions">
         <button class="btn ghost" id="refreshBtn" type="button">刷新列表</button>
         <button class="btn ghost" id="buildBtn" type="button">重新生成网站数据</button>
-        <button class="btn ghost" id="settingsBtn" type="button">设置翻译 Key</button>
+        <button class="btn ghost" id="settingsBtn" type="button">翻译设置</button>
         <button class="btn green" id="publishBtn" type="button">一键上传 GitHub</button>
       </div>
     </header>
@@ -381,7 +381,7 @@
     let selectedId = '';
     let selectedImageFile = null;
     let previewObjectUrl = '';
-    let translationSettings = { hasOpenAIKey: false, model: 'gpt-4.1-mini' };
+    let translationSettings = { provider: 'ollama', hasOpenAIKey: false, model: 'gpt-4.1-mini', ollamaModel: 'qwen2:7b', ollamaUrl: 'http://127.0.0.1:11434' };
     let tagOptions = [];
     let listAccessFilter = 'all';
 
@@ -552,12 +552,31 @@
     function editPrompt(id) { const item = prompts.find(p => p.id === id); if (item) fill(item); }
 
 
+    function normalizeProvider(value) {
+      const provider = String(value || '').trim().toLowerCase();
+      return ['ollama', 'openai', 'off'].includes(provider) ? provider : 'ollama';
+    }
+
+    function renderTranslationBadge() {
+      const provider = normalizeProvider(translationSettings.provider);
+      if (provider === 'off') {
+        $('modeBadge').textContent = '\u7ffb\u8bd1\u5173\u95ed';
+        return;
+      }
+      if (provider === 'openai') {
+        const label = translationSettings.hasOpenAIKey ? 'OpenAI \u00b7 ' + (translationSettings.model || 'gpt-4.1-mini') : 'OpenAI Key \u672a\u8bbe\u7f6e';
+        $('modeBadge').textContent = label;
+        return;
+      }
+      $('modeBadge').textContent = 'Ollama \u00b7 ' + (translationSettings.ollamaModel || 'qwen2:7b');
+    }
+
     async function loadSettings() {
       try {
-        translationSettings = await api('/api/settings');
-        $('modeBadge').textContent = translationSettings.hasOpenAIKey ? `翻译可用 · ${translationSettings.model}` : '翻译未设置';
+        translationSettings = { ...translationSettings, ...(await api('/api/settings')) };
+        renderTranslationBadge();
       } catch (error) {
-        $('modeBadge').textContent = '翻译状态未知';
+        $('modeBadge').textContent = '\u7ffb\u8bd1\u72b6\u6001\u672a\u77e5';
       }
     }
 
@@ -705,38 +724,74 @@
       }
     });
     $('settingsBtn').addEventListener('click', async () => {
-      const currentModel = translationSettings.model || 'gpt-4.1-mini';
-      const key = prompt('请输入 OpenAI API Key。留空会清除本地保存的 Key。', '');
-      if (key === null) return;
-      const model = prompt('翻译模型', currentModel) || currentModel;
+      const currentProvider = normalizeProvider(translationSettings.provider);
+      const providerInput = prompt('\u7ffb\u8bd1\u6765\u6e90\uff1aollama / openai / off', currentProvider);
+      if (providerInput === null) return;
+      const provider = normalizeProvider(providerInput);
+      const payload = { provider };
+
+      if (provider === 'ollama') {
+        const currentModel = translationSettings.ollamaModel || 'qwen2:7b';
+        const currentUrl = translationSettings.ollamaUrl || 'http://127.0.0.1:11434';
+        const ollamaModel = prompt('Ollama model', currentModel);
+        if (ollamaModel === null) return;
+        const ollamaUrl = prompt('Ollama URL', currentUrl);
+        if (ollamaUrl === null) return;
+        payload.ollamaModel = ollamaModel.trim() || currentModel;
+        payload.ollamaUrl = ollamaUrl.trim() || currentUrl;
+      }
+
+      if (provider === 'openai') {
+        const currentModel = translationSettings.model || 'gpt-4.1-mini';
+        const key = prompt('\u8bf7\u8f93\u5165 OpenAI API Key\u3002\u7559\u7a7a\u4f1a\u6e05\u9664\u672c\u5730\u4fdd\u5b58\u7684 Key\u3002', '');
+        if (key === null) return;
+        const model = prompt('\u7ffb\u8bd1\u6a21\u578b', currentModel) || currentModel;
+        payload.openAIKey = key.trim();
+        payload.openAIModel = model.trim() || currentModel;
+      }
+
       try {
-        translationSettings = await api('/api/settings', { method: 'POST', body: JSON.stringify({ openAIKey: key.trim(), model: model.trim() }) });
-        $('modeBadge').textContent = translationSettings.hasOpenAIKey ? `翻译可用 · ${translationSettings.model}` : '翻译未设置';
-        setStatus(translationSettings.hasOpenAIKey ? '翻译 Key 已保存到本地电脑，不会上传 GitHub。' : '已清除本地翻译 Key。');
+        translationSettings = { ...translationSettings, ...(await api('/api/settings', { method: 'POST', body: JSON.stringify(payload) })) };
+        renderTranslationBadge();
+        if (provider === 'ollama') setStatus('\u5df2\u5207\u6362\u5230\u672c\u5730 Ollama \u7ffb\u8bd1\u3002\u8bf7\u786e\u8ba4 Ollama \u5df2\u542f\u52a8\uff0c\u5e76\u5df2\u4e0b\u8f7d\u8be5\u6a21\u578b\u3002');
+        else if (provider === 'openai') setStatus(translationSettings.hasOpenAIKey ? '\u7ffb\u8bd1 Key \u5df2\u4fdd\u5b58\u5230\u672c\u5730\u7535\u8111\uff0c\u4e0d\u4f1a\u4e0a\u4f20 GitHub\u3002' : '\u5df2\u5207\u6362\u5230 OpenAI\uff0c\u4f46\u672a\u8bbe\u7f6e Key\u3002');
+        else setStatus('\u5df2\u5173\u95ed\u81ea\u52a8\u7ffb\u8bd1\u3002');
       } catch (error) {
-        setStatus(`保存翻译设置失败：${error.message}`);
+        setStatus('\u4fdd\u5b58\u7ffb\u8bd1\u8bbe\u7f6e\u5931\u8d25\uff1a' + error.message);
       }
     });
 
     $('translateBtn').addEventListener('click', async () => {
       const item = formItem();
+      if (String(item.access || '').toLowerCase() === 'premium') {
+        alert('Premium \u662f\u672c\u5730\u79c1\u5bc6\u6536\u85cf\uff0c\u4e0d\u505a\u81ea\u52a8\u7ffb\u8bd1\uff0c\u4e5f\u4e0d\u4e0a\u4f20 GitHub\u3002');
+        setStatus('\u5df2\u963b\u6b62\u7ffb\u8bd1\uff1a\u5f53\u524d\u6761\u76ee\u662f Premium \u672c\u5730\u79c1\u5bc6\u5185\u5bb9\u3002');
+        return;
+      }
       if (!item.title && !item.titleZh && !item.prompt && !item.promptZh) {
-        setStatus('请先填写中文或英文标题/Prompt，再点击自动翻译。');
+        setStatus('\u8bf7\u5148\u586b\u5199\u4e2d\u6587\u6216\u82f1\u6587\u6807\u9898/Prompt\uff0c\u518d\u70b9\u51fb\u81ea\u52a8\u7ffb\u8bd1\u3002');
+        return;
+      }
+      const provider = normalizeProvider(translationSettings.provider);
+      if (provider === 'off') {
+        setStatus('\u81ea\u52a8\u7ffb\u8bd1\u5df2\u5173\u95ed\u3002\u53ef\u5728\u201c\u7ffb\u8bd1\u8bbe\u7f6e\u201d\u4e2d\u91cd\u65b0\u6253\u5f00\u3002');
         return;
       }
       try {
         $('translateBtn').disabled = true;
         const direction = translationDirection(item);
-        setStatus(direction === 'zhToEn' ? '正在从中文翻译为英文...' : '正在从英文翻译为中文...');
+        const modelLabel = provider === 'ollama' ? ('Ollama ' + (translationSettings.ollamaModel || 'qwen2:7b')) : ('OpenAI ' + (translationSettings.model || 'gpt-4.1-mini'));
+        setStatus((direction === 'zhToEn' ? '\u6b63\u5728\u4ece\u4e2d\u6587\u7ffb\u8bd1\u4e3a\u82f1\u6587...' : '\u6b63\u5728\u4ece\u82f1\u6587\u7ffb\u8bd1\u4e3a\u4e2d\u6587...') + ' ' + modelLabel);
         const result = await api('/api/translate', { method: 'POST', body: JSON.stringify({ item, direction }) });
         applyTranslation(result);
-        setStatus(`自动翻译完成。模型：${result.model}。检查无误后点击“保存 / 更新”。`);
+        setStatus('\u81ea\u52a8\u7ffb\u8bd1\u5b8c\u6210\u3002\u6a21\u578b\uff1a' + result.model + '\u3002\u68c0\u67e5\u65e0\u8bef\u540e\u70b9\u51fb\u201c\u4fdd\u5b58 / \u66f4\u65b0\u201d\u3002');
       } catch (error) {
-        setStatus(`自动翻译失败：${error.message}`);
+        setStatus('\u81ea\u52a8\u7ffb\u8bd1\u5931\u8d25\uff1a' + error.message);
       } finally {
         $('translateBtn').disabled = false;
       }
     });
+
     $('deleteBtn').addEventListener('click', async () => {
       const id = $('id').value.trim();
       if (!id) { setStatus('当前是新建内容，还没有可删除的记录。'); return; }

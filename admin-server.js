@@ -18,7 +18,10 @@ const MAX_BODY = 80 * 1024 * 1024;
 const CATEGORY_VALUES = ['cityscape', 'portrait', 'scene', 'concept', 'design', 'product', 'commercial', 'workflow', 'tutorial'];
 const ACCESS_VALUES = ['Free', 'Premium'];
 const TYPE_VALUES = ['Image', 'Video'];
-const DEFAULT_TRANSLATION_MODEL = process.env.OPENAI_TRANSLATION_MODEL || 'gpt-4.1-mini';
+const DEFAULT_TRANSLATION_PROVIDER = process.env.PROMPT_GALLERY_TRANSLATION_PROVIDER || 'ollama';
+const DEFAULT_OPENAI_TRANSLATION_MODEL = process.env.OPENAI_TRANSLATION_MODEL || 'gpt-4.1-mini';
+const DEFAULT_OLLAMA_MODEL = process.env.OLLAMA_TRANSLATION_MODEL || 'qwen2:7b';
+const DEFAULT_OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
 
 function readJson(file, fallback) {
   if (!fs.existsSync(file)) return fallback;
@@ -86,11 +89,31 @@ function writeSecrets(value) {
   fs.writeFileSync(SECRETS_FILE, JSON.stringify(next, null, 2) + '\n', 'utf8');
 }
 
-function getOpenAIConfig() {
+function normalizeTranslationProvider(value) {
+  const provider = String(value || '').trim().toLowerCase();
+  return ['ollama', 'openai', 'off'].includes(provider) ? provider : 'ollama';
+}
+
+function getTranslationConfig() {
   const secrets = readSecrets();
+  const provider = normalizeTranslationProvider(process.env.PROMPT_GALLERY_TRANSLATION_PROVIDER || secrets.TRANSLATION_PROVIDER || DEFAULT_TRANSLATION_PROVIDER);
   return {
+    provider,
     apiKey: process.env.OPENAI_API_KEY || secrets.OPENAI_API_KEY || '',
-    model: process.env.OPENAI_TRANSLATION_MODEL || secrets.OPENAI_TRANSLATION_MODEL || DEFAULT_TRANSLATION_MODEL
+    model: process.env.OPENAI_TRANSLATION_MODEL || secrets.OPENAI_TRANSLATION_MODEL || DEFAULT_OPENAI_TRANSLATION_MODEL,
+    ollamaModel: process.env.OLLAMA_TRANSLATION_MODEL || secrets.OLLAMA_TRANSLATION_MODEL || DEFAULT_OLLAMA_MODEL,
+    ollamaUrl: String(process.env.OLLAMA_BASE_URL || secrets.OLLAMA_BASE_URL || DEFAULT_OLLAMA_URL).replace(/\/+$/, ''),
+  };
+}
+
+function publicTranslationConfig() {
+  const config = getTranslationConfig();
+  return {
+    provider: config.provider,
+    hasOpenAIKey: !!config.apiKey,
+    model: config.model,
+    ollamaModel: config.ollamaModel,
+    ollamaUrl: config.ollamaUrl,
   };
 }
 
@@ -112,6 +135,43 @@ function requestJson(options, body) {
     });
     req.on('error', reject);
     req.setTimeout(45000, () => req.destroy(new Error('Translation request timed out.')));
+    req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+function requestJsonUrl(endpoint, body) {
+  return new Promise((resolve, reject) => {
+    let url;
+    try {
+      url = new URL(endpoint);
+    } catch (error) {
+      reject(new Error(`Invalid request URL: ${endpoint}`));
+      return;
+    }
+    const transport = url.protocol === 'https:' ? https : http;
+    const req = transport.request({
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: `${url.pathname}${url.search}`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }, res => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (error) { data = { raw: text }; }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(data.error?.message || data.message || text || `HTTP ${res.statusCode}`));
+          return;
+        }
+        resolve(data);
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(90000, () => req.destroy(new Error('Local translation request timed out.')));
     req.write(JSON.stringify(body));
     req.end();
   });
@@ -149,12 +209,7 @@ function detectTranslationDirection(item, requestedDirection) {
   return 'zhToEn';
 }
 
-async function translatePromptItem(item, requestedDirection) {
-  const { apiKey, model } = getOpenAIConfig();
-  if (!apiKey) {
-    throw new Error('OpenAI API Key is not configured. Click 设置翻译 Key first, or set OPENAI_API_KEY before starting the admin server.');
-  }
-
+function buildTranslationRequest(item, requestedDirection) {
   const direction = detectTranslationDirection(item, requestedDirection);
   const directionText = direction === 'enToZh' ? 'English to Simplified Chinese' : 'Simplified Chinese to English';
   const payload = {
@@ -164,9 +219,33 @@ async function translatePromptItem(item, requestedDirection) {
     prompt: item.prompt || '',
     promptZh: item.promptZh || '',
   };
+  const systemText = 'You are a strict translation engine for an AI prompt gallery. Translate only the text provided by the user. Do not invent new concepts, do not summarize, and never output placeholders such as Title or Prompt goes here. Preserve URLs, @handles, model names, brand/product names, and line breaks. Empty input fields must stay empty. Return JSON only.';
+  const userText = 'Translate ' + directionText + '. If direction is zhToEn, translate titleZh into title and promptZh into prompt, while keeping titleZh and promptZh unchanged. If direction is enToZh, translate title into titleZh and prompt into promptZh, while keeping title and prompt unchanged. Keep empty fields empty. Return exactly these keys: title, titleZh, prompt, promptZh. Input JSON:\n' + JSON.stringify(payload);
+  return { direction, systemText, userText };
+}
 
+function mergeTranslation(item, direction, translated) {
+  const output = {
+    title: String(item.title || '').trim(),
+    titleZh: String(item.titleZh || '').trim(),
+    prompt: String(item.prompt || '').trim(),
+    promptZh: String(item.promptZh || '').trim(),
+  };
+
+  if (direction === 'enToZh') {
+    output.titleZh = String(translated.titleZh || translated.title || output.titleZh).trim();
+    output.promptZh = String(translated.promptZh || translated.prompt || output.promptZh).trim();
+  } else {
+    output.title = String(translated.title || translated.titleZh || output.title).trim();
+    output.prompt = String(translated.prompt || translated.promptZh || output.prompt).trim();
+  }
+
+  return output;
+}
+
+async function translateWithOpenAI(item, request, config) {
   const body = {
-    model,
+    model: config.model,
     text: {
       format: {
         type: 'json_schema',
@@ -188,17 +267,11 @@ async function translatePromptItem(item, requestedDirection) {
     input: [
       {
         role: 'system',
-        content: [{
-          type: 'input_text',
-          text: 'You are a strict translation engine for an AI prompt gallery. Translate only the text provided by the user. Do not invent new concepts, do not summarize, do not beautify beyond faithful translation. Preserve URLs, @handles, model names, brand/product names, and line breaks. Return JSON only.',
-        }],
+        content: [{ type: 'input_text', text: request.systemText }],
       },
       {
         role: 'user',
-        content: [{
-          type: 'input_text',
-          text: `Translate ${directionText}. If direction is zhToEn, translate titleZh into title and promptZh into prompt. If direction is enToZh, translate title into titleZh and prompt into promptZh. Keep already provided counterpart fields unless they are empty. Input JSON:\n${JSON.stringify(payload)}`,
-        }],
+        content: [{ type: 'input_text', text: request.userText }],
       },
     ],
   };
@@ -208,30 +281,58 @@ async function translatePromptItem(item, requestedDirection) {
     path: '/v1/responses',
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: 'Bearer ' + config.apiKey,
       'Content-Type': 'application/json',
     },
   }, body);
 
   const translated = parseJsonText(extractResponseText(data));
-  const output = {
-    title: String(item.title || '').trim(),
-    titleZh: String(item.titleZh || '').trim(),
-    prompt: String(item.prompt || '').trim(),
-    promptZh: String(item.promptZh || '').trim(),
-  };
-
-  if (direction === 'enToZh') {
-    output.titleZh = String(translated.titleZh || translated.title || output.titleZh).trim();
-    output.promptZh = String(translated.promptZh || translated.prompt || output.promptZh).trim();
-  } else {
-    output.title = String(translated.title || translated.titleZh || output.title).trim();
-    output.prompt = String(translated.prompt || translated.promptZh || output.prompt).trim();
-  }
-
-  return { direction, model, item: output };
+  return { direction: request.direction, model: config.model, provider: 'openai', item: mergeTranslation(item, request.direction, translated) };
 }
 
+async function translateWithOllama(item, request, config) {
+  const model = String(config.ollamaModel || '').trim();
+  if (!model) throw new Error('Ollama model is not configured.');
+
+  const data = await requestJsonUrl(config.ollamaUrl + '/api/chat', {
+    model,
+    stream: false,
+    options: { temperature: 0.2 },
+    messages: [
+      { role: 'system', content: request.systemText },
+      { role: 'user', content: request.userText },
+    ],
+  });
+
+  const text = data.message?.content || data.response || '';
+  const translated = parseJsonText(text);
+  return { direction: request.direction, model: 'Ollama - ' + model, provider: 'ollama', item: mergeTranslation(item, request.direction, translated) };
+}
+
+async function translatePromptItem(item, requestedDirection) {
+  if (String(item.access || '').toLowerCase() === 'premium') {
+    throw new Error('Premium records are local-only. Auto translation is disabled for Premium items.');
+  }
+
+  const config = getTranslationConfig();
+  if (config.provider === 'off') {
+    throw new Error('Auto translation is turned off in settings.');
+  }
+
+  const request = buildTranslationRequest(item, requestedDirection);
+  if (config.provider === 'openai') {
+    if (!config.apiKey) {
+      throw new Error('OpenAI API Key is not configured. Open Translation Settings or set OPENAI_API_KEY before starting the admin server.');
+    }
+    return translateWithOpenAI(item, request, config);
+  }
+
+  try {
+    return await translateWithOllama(item, request, config);
+  } catch (error) {
+    throw new Error('Ollama translation failed. Please confirm Ollama is running and model "' + config.ollamaModel + '" is installed. ' + error.message);
+  }
+}
 function slugify(value, fallback = 'prompt') {
   const ascii = String(value || '')
     .normalize('NFKD')
@@ -419,19 +520,21 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/settings') {
-    const config = getOpenAIConfig();
-    send(res, 200, { hasOpenAIKey: !!config.apiKey, model: config.model });
+    send(res, 200, publicTranslationConfig());
     return;
   }
 
   if (req.method === 'POST' && url.pathname === '/api/settings') {
     const payload = await readBodyJson(req);
+    const provider = normalizeTranslationProvider(payload.provider);
     writeSecrets({
+      TRANSLATION_PROVIDER: provider,
       OPENAI_API_KEY: String(payload.openAIKey || '').trim(),
-      OPENAI_TRANSLATION_MODEL: String(payload.model || '').trim() || DEFAULT_TRANSLATION_MODEL,
+      OPENAI_TRANSLATION_MODEL: String(payload.openAIModel || payload.model || '').trim() || DEFAULT_OPENAI_TRANSLATION_MODEL,
+      OLLAMA_TRANSLATION_MODEL: String(payload.ollamaModel || '').trim() || DEFAULT_OLLAMA_MODEL,
+      OLLAMA_BASE_URL: String(payload.ollamaUrl || '').trim() || DEFAULT_OLLAMA_URL,
     });
-    const config = getOpenAIConfig();
-    send(res, 200, { ok: true, hasOpenAIKey: !!config.apiKey, model: config.model });
+    send(res, 200, { ok: true, ...publicTranslationConfig() });
     return;
   }
 
