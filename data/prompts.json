@@ -1,5 +1,22 @@
 [
   {
+    "id": "advertisement",
+    "title": "Advertisement",
+    "titleZh": "广告",
+    "author": "Brainstorming",
+    "category": "design",
+    "type": "Image",
+    "access": "Free",
+    "tags": [
+      "design",
+      "Artistly"
+    ],
+    "image": "assets/images/advertisement-mr4muz7h.webp",
+    "originalUrl": "",
+    "prompt": "A dynamic, multi-panel ad design perfect for Instagram and Meta stories. The top panel shows the cute EyeRest Daily mascot 'Mobobo' demonstrating a simple eye-tracking exercise, while the bottom panel shows a close-up of healthy, relaxed human eyes looking away from a screen toward a distant green window view. The color scheme features the brand's signature soft green, sky blue, and pastel yellow accents. Bold, high-contrast typography in the center reads, 'Prevent Digital Eye Strain' in a rounded, modern font, with a clear call-to-action subheadline below: 'Start your free daily eye-care routine at EyeRestDaily.com'. The lighting is bright, clean, and clinical yet welcoming, conveying authority, simplicity, and immediate visual comfort.",
+    "promptZh": "一个动态的多面板广告设计，非常适合Instagram和Meta故事。顶部面板展示了可爱的EyeRest Daily吉祥物“Mobobo”演示简单的眼动训练，而底部面板则是健康放松的人眼特写，眼睛远离屏幕，望向远处绿色的窗外景色。色彩方案采用品牌标志性柔和的绿色、天空蓝和粉彩黄色点缀。中心采用粗体、高对比度的圆润现代字体，写着“预防数字眼疲劳”，下方有清晰的行动号召副标题：“开始您的免费每日眼部护理程序，访问EyeRestDaily.com”。灯光明亮、干净且具有临床感但温馨，传达权威、简洁和即时的视觉舒适感。"
+  },
+  {
     "id": "prompt-mr4hdq92",
     "title": "Chinese-Japanese Vocabulary Cards",
     "titleZh": "中日双语单词卡片",
