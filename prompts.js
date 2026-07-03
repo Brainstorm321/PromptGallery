@@ -45,7 +45,10 @@ window.PROMPTS = [
     "title": "High-end Real Estate Poster",
     "titleZh": "高端地产广告海报",
     "author": "Larus Canus @MrLarus",
-    "category": "design",
+    "category": [
+      "design",
+      "commercial"
+    ],
     "type": "Image",
     "tags": [
       "Concept",
