@@ -34,24 +34,5 @@
     "originalUrl": "https://x.com/xiaoxiaodong01/status/2057987390892085629?s=20",
     "prompt": "Images suitable for PPT, infographics, self-media covers, knowledge cards, business cards, or brand visuals. \n\nClick \"View Original \" for detailed prompts.",
     "promptZh": "适用于 PPT、信息图、自媒体封面、知识卡片、名片或品牌视觉的图片。\n\n点击”原始来源“获得详细提示词。"
-  },
-  {
-    "id": "enchanted-forest-pathway",
-    "title": "Enchanted Forest Pathway",
-    "titleZh": "魔法森林小径",
-    "author": "@unknown",
-    "category": "scene",
-    "type": "Image",
-    "access": "Free",
-    "tags": [
-      "scene",
-      "enchanted",
-      "forest",
-      "pathway"
-    ],
-    "image": "private-assets/images/an_enchanted_forest_pathway_at_cb1974ca76f878deb4c0dfe36eba19af.png",
-    "originalUrl": "",
-    "prompt": "An enchanted forest pathway in autumn, soft light filtering through trees.",
-    "promptZh": "秋日魔法森林小径，柔和的光线穿过树木。"
   }
 ]
