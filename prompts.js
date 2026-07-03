@@ -62,7 +62,10 @@ window.PROMPTS = [
     "title": "PPT, Infographics, X.com",
     "titleZh": "PPT，信息图，X.com",
     "author": "小小东@xiaoxiaodong01",
-    "category": "commercial",
+    "category": [
+      "design",
+      "commercial"
+    ],
     "type": "Image",
     "tags": [
       "brand-visual",
