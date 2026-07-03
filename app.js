@@ -2,15 +2,16 @@
   const grid = document.getElementById('promptGrid');
   const searchInput = document.getElementById('searchInput');
   const typeSelect = document.getElementById('typeSelect');
+  const paginationSection = document.getElementById('paginationSection');
   const paginationControls = document.getElementById('paginationControls');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   const backToFirstPageBtn = document.getElementById('backToFirstPageBtn');
 
   if (!grid || !Array.isArray(window.PROMPTS)) return;
 
-  const ITEMS_PER_PAGE = 8;
-  const TOTAL_PAGES = 10;
   let currentPage = 1;
+  let itemsPerPage = 12;
+  let totalPages = 1;
   const i18n = window.PromptGalleryI18N || {};
 
   function tr(key, vars) {
@@ -67,10 +68,36 @@
     return list;
   }
 
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function getColumnCount() {
+    const width = grid.getBoundingClientRect().width || grid.clientWidth || window.innerWidth;
+    const gap = 24;
+    const targetCardWidth = 260;
+    return clamp(Math.floor((width + gap) / (targetCardWidth + gap)), 1, 8);
+  }
+
+  function getRowCount(columns) {
+    if (columns <= 1) return 3;
+    if (window.innerWidth >= 1200) return 3;
+    if (window.innerWidth >= 768) return 3;
+    return 3;
+  }
+
+  function computeItemsPerPage() {
+    const columns = getColumnCount();
+    return columns * getRowCount(columns);
+  }
+
   function render(){
     const list = sortPrompts(PROMPTS.filter(matches));
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
+    itemsPerPage = computeItemsPerPage();
+    totalPages = Math.max(1, Math.ceil(list.length / itemsPerPage));
+    currentPage = clamp(currentPage, 1, totalPages);
+    const start = (currentPage - 1) * itemsPerPage;
+    const pageItems = list.slice(start, start + itemsPerPage);
 
     grid.innerHTML = pageItems.length
       ? pageItems.map(cardHTML).join('')
@@ -152,9 +179,9 @@
   }
 
   function getVisiblePages() {
-    const pages = new Set([1, TOTAL_PAGES]);
+    const pages = new Set([1, totalPages]);
     const start = Math.max(2, currentPage - 1);
-    const end = Math.min(TOTAL_PAGES - 1, currentPage + 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
 
     for (let page = start; page <= end; page += 1) {
       pages.add(page);
@@ -165,13 +192,13 @@
       pages.add(3);
     }
 
-    if (currentPage >= TOTAL_PAGES - 2) {
-      pages.add(TOTAL_PAGES - 2);
-      pages.add(TOTAL_PAGES - 1);
+    if (currentPage >= totalPages - 2) {
+      pages.add(totalPages - 2);
+      pages.add(totalPages - 1);
     }
 
     return [...pages]
-      .filter(page => page >= 1 && page <= TOTAL_PAGES)
+      .filter(page => page >= 1 && page <= totalPages)
       .sort((a, b) => a - b);
   }
 
@@ -181,6 +208,15 @@
 
   function updatePagination() {
     if (!paginationControls) return;
+    if (paginationSection) paginationSection.classList.toggle('hidden', totalPages <= 1);
+    paginationControls.classList.toggle('hidden', totalPages <= 1);
+    if (loadMoreBtn) loadMoreBtn.classList.toggle('hidden', currentPage >= totalPages);
+    if (totalPages <= 1) {
+      paginationControls.innerHTML = '';
+      updateBackToFirstPageButton();
+      return;
+    }
+
     const visiblePages = getVisiblePages();
     const pageParts = [];
 
@@ -197,7 +233,7 @@
         <i class="bi bi-chevron-left"></i>
       </button>
       ${pageParts.join('')}
-      <button class="${navButtonClasses(currentPage === TOTAL_PAGES)}" data-page-action="next" type="button" ${currentPage === TOTAL_PAGES ? 'disabled' : ''}>
+      <button class="${navButtonClasses(currentPage === totalPages)}" data-page-action="next" type="button" ${currentPage === totalPages ? 'disabled' : ''}>
         <i class="bi bi-chevron-right"></i>
       </button>`;
 
@@ -336,6 +372,10 @@
   }
 
   window.addEventListener('prompt-gallery-language-change', render);
+  window.addEventListener('resize', () => {
+    window.clearTimeout(window.__promptGalleryResizeTimer);
+    window.__promptGalleryResizeTimer = window.setTimeout(render, 120);
+  });
 
   render();
 })();

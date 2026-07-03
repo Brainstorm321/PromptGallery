@@ -188,9 +188,23 @@
       value || '';
   }
 
+  function isUsefulTitle(value) {
+    const text = String(value || '').trim();
+    return text && !/^(untitled|title|unknown)$/i.test(text);
+  }
+
   function promptTitle(item) {
     if (!item) return '';
-    return (promptTitles[currentLang] && promptTitles[currentLang][item.id]) || (currentLang === 'zh' && item.titleZh) || item.title || 'Untitled';
+    const translatedTitle = promptTitles[currentLang] && promptTitles[currentLang][item.id];
+    if (isUsefulTitle(translatedTitle)) return translatedTitle;
+    if (currentLang === 'zh') {
+      if (isUsefulTitle(item.titleZh)) return item.titleZh;
+      if (isUsefulTitle(item.title)) return item.title;
+    } else {
+      if (isUsefulTitle(item.title)) return item.title;
+      if (isUsefulTitle(item.titleZh)) return item.titleZh;
+    }
+    return 'Untitled';
   }
 
   function promptText(item) {

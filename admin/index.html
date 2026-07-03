@@ -132,7 +132,12 @@
       outline: none;
     }
     input:focus, select:focus, textarea:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96, 165, 250, .16); }
-    textarea { min-height: 130px; resize: vertical; }
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
     .hint { color: var(--muted); font-size: 12px; line-height: 1.45; }
     .choice-grid { display: flex; flex-wrap: wrap; gap: 8px; }
     .choice-pill { position: relative; display: inline-flex; align-items: center; }
@@ -766,21 +771,44 @@
       }
     }
 
+    function isPlaceholderTitle(value) {
+      return /^(untitled|title|unknown|unknown title)$/i.test(String(value || '').trim());
+    }
+
     function translationDirection(item) {
-      const needsEn = !!((item.titleZh && !item.title) || (item.promptZh && !item.prompt));
-      const needsZh = !!((item.title && !item.titleZh) || (item.prompt && !item.promptZh));
+      const title = isPlaceholderTitle(item.title) ? '' : item.title;
+      const titleZh = isPlaceholderTitle(item.titleZh) ? '' : item.titleZh;
+      const needsEn = !!((titleZh && !title) || (item.promptZh && !item.prompt));
+      const needsZh = !!((title && !titleZh) || (item.prompt && !item.promptZh));
+      if (needsEn && needsZh) return 'mixed';
       if (needsEn) return 'zhToEn';
       if (needsZh) return 'enToZh';
-      if (item.titleZh || item.promptZh) return 'zhToEn';
+      if (titleZh || item.promptZh) return 'zhToEn';
       return 'enToZh';
     }
 
     function applyTranslation(result) {
       const translated = result.item || {};
-      if (translated.title && (!$('title').value.trim() || result.direction === 'zhToEn')) $('title').value = translated.title;
-      if (translated.titleZh && (!$('titleZh').value.trim() || result.direction === 'enToZh')) $('titleZh').value = translated.titleZh;
-      if (translated.prompt && (!$('prompt').value.trim() || result.direction === 'zhToEn')) $('prompt').value = translated.prompt;
-      if (translated.promptZh && (!$('promptZh').value.trim() || result.direction === 'enToZh')) $('promptZh').value = translated.promptZh;
+      let applied = 0;
+      const setIfChanged = (id, value) => {
+        const next = String(value || '');
+        if ($(id).value !== next) {
+          $(id).value = next;
+          applied += 1;
+        }
+      };
+      if (result.direction === 'zhToEn') {
+        setIfChanged('title', translated.title || '');
+        setIfChanged('prompt', translated.prompt || '');
+        if (translated.titleZh && !$('titleZh').value.trim()) $('titleZh').value = translated.titleZh;
+        if (translated.promptZh && !$('promptZh').value.trim()) $('promptZh').value = translated.promptZh;
+        return applied;
+      }
+      setIfChanged('titleZh', translated.titleZh || '');
+      setIfChanged('promptZh', translated.promptZh || '');
+      if (translated.title && !$('title').value.trim()) $('title').value = translated.title;
+      if (translated.prompt && !$('prompt').value.trim()) $('prompt').value = translated.prompt;
+      return applied;
     }
 
     function fileToDataUrl(file) {
@@ -945,10 +973,19 @@
         $('translateBtn').disabled = true;
         const direction = translationDirection(item);
         const modelLabel = provider === 'ollama' ? ('Ollama ' + (translationSettings.ollamaModel || 'qwen2:7b')) : ('OpenAI ' + (translationSettings.model || 'gpt-4.1-mini'));
-        setStatus((direction === 'zhToEn' ? '\u6b63\u5728\u4ece\u4e2d\u6587\u7ffb\u8bd1\u4e3a\u82f1\u6587...' : '\u6b63\u5728\u4ece\u82f1\u6587\u7ffb\u8bd1\u4e3a\u4e2d\u6587...') + ' ' + modelLabel);
+        const slowHint = provider === 'ollama' && /27b|20b|32b|70b/i.test(translationSettings.ollamaModel || '') ? '\n\u5927\u6a21\u578b\u9996\u6b21\u52a0\u8f7d\u53ef\u80fd\u9700\u8981\u51e0\u5206\u949f\uff0c\u8bf7\u7a0d\u7b49\u3002' : '';
+        const directionLabel = direction === 'mixed'
+          ? '\u6b63\u5728\u81ea\u52a8\u8865\u5168\u4e2d\u82f1\u6587\u7f3a\u5931\u5b57\u6bb5...'
+          : (direction === 'zhToEn' ? '\u6b63\u5728\u4ece\u4e2d\u6587\u7ffb\u8bd1\u4e3a\u82f1\u6587...' : '\u6b63\u5728\u4ece\u82f1\u6587\u7ffb\u8bd1\u4e3a\u4e2d\u6587...');
+        setStatus(directionLabel + ' ' + modelLabel + slowHint);
         const result = await api('/api/translate', { method: 'POST', body: JSON.stringify({ item, direction }) });
-        applyTranslation(result);
-        setStatus('\u81ea\u52a8\u7ffb\u8bd1\u5b8c\u6210\u3002\u6a21\u578b\uff1a' + result.model + '\u3002\u68c0\u67e5\u65e0\u8bef\u540e\u70b9\u51fb\u201c\u4fdd\u5b58 / \u66f4\u65b0\u201d\u3002');
+        const applied = applyTranslation(result);
+        const warnings = result.warnings && result.warnings.length ? '\n\u6ce8\u610f\uff1a' + result.warnings.join(' ') : '';
+        if (!applied) {
+          setStatus('\u6ca1\u6709\u53ef\u7528\u7684\u7ffb\u8bd1\u7ed3\u679c\u88ab\u586b\u5165\u3002\u6a21\u578b\uff1a' + result.model + '\u3002\u8bf7\u6362\u4e00\u4e2a\u6a21\u578b\u6216\u624b\u52a8\u8c03\u6574\u540e\u518d\u8bd5\u3002' + warnings);
+          return;
+        }
+        setStatus('\u81ea\u52a8\u7ffb\u8bd1\u5b8c\u6210\uff0c\u5df2\u586b\u5165 ' + applied + ' \u4e2a\u5b57\u6bb5\u3002\u6a21\u578b\uff1a' + result.model + '\u3002\u68c0\u67e5\u65e0\u8bef\u540e\u70b9\u51fb\u201c\u4fdd\u5b58 / \u66f4\u65b0\u201d\u3002' + warnings);
       } catch (error) {
         setStatus('\u81ea\u52a8\u7ffb\u8bd1\u5931\u8d25\uff1a' + error.message);
       } finally {

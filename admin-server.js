@@ -22,6 +22,7 @@ const DEFAULT_TRANSLATION_PROVIDER = process.env.PROMPT_GALLERY_TRANSLATION_PROV
 const DEFAULT_OPENAI_TRANSLATION_MODEL = process.env.OPENAI_TRANSLATION_MODEL || 'gpt-4.1-mini';
 const DEFAULT_OLLAMA_MODEL = process.env.OLLAMA_TRANSLATION_MODEL || 'qwen2:7b';
 const DEFAULT_OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+const OLLAMA_TRANSLATION_TIMEOUT_MS = Number(process.env.OLLAMA_TRANSLATION_TIMEOUT_MS || 10 * 60 * 1000);
 
 function readJson(file, fallback) {
   if (!fs.existsSync(file)) return fallback;
@@ -171,7 +172,7 @@ function requestJsonUrl(endpoint, body) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(90000, () => req.destroy(new Error('Local translation request timed out.')));
+    req.setTimeout(OLLAMA_TRANSLATION_TIMEOUT_MS, () => req.destroy(new Error('Local translation request timed out. Large local models can need several minutes; try again after the model is warmed up or switch to a smaller model.')));
     req.write(JSON.stringify(body));
     req.end();
   });
@@ -233,10 +234,13 @@ function parseJsonText(text) {
 
 function detectTranslationDirection(item, requestedDirection) {
   if (requestedDirection && requestedDirection !== 'auto') return requestedDirection;
-  const hasZh = !!(item.titleZh || item.promptZh);
-  const hasEn = !!(item.title || item.prompt);
-  const needsEn = !!((item.titleZh && !item.title) || (item.promptZh && !item.prompt));
-  const needsZh = !!((item.title && !item.titleZh) || (item.prompt && !item.promptZh));
+  const title = isPlaceholder(item.title) ? '' : item.title;
+  const titleZh = isPlaceholder(item.titleZh) ? '' : item.titleZh;
+  const hasZh = !!(titleZh || item.promptZh);
+  const hasEn = !!(title || item.prompt);
+  const needsEn = !!((titleZh && !title) || (item.promptZh && !item.prompt));
+  const needsZh = !!((title && !titleZh) || (item.prompt && !item.promptZh));
+  if (needsEn && needsZh) return 'mixed';
   if (hasZh && needsEn) return 'zhToEn';
   if (hasEn && needsZh) return 'enToZh';
   if (hasZh && !hasEn) return 'zhToEn';
@@ -246,36 +250,81 @@ function detectTranslationDirection(item, requestedDirection) {
 
 function buildTranslationRequest(item, requestedDirection) {
   const direction = detectTranslationDirection(item, requestedDirection);
-  const directionText = direction === 'enToZh' ? 'English to Simplified Chinese' : 'Simplified Chinese to English';
+  const directionText = direction === 'mixed'
+    ? 'missing bilingual fields in both directions'
+    : (direction === 'enToZh' ? 'English to Simplified Chinese' : 'Simplified Chinese to English');
   const payload = {
     direction,
-    title: item.title || '',
-    titleZh: item.titleZh || '',
+    title: isPlaceholder(item.title) ? '' : (item.title || ''),
+    titleZh: isPlaceholder(item.titleZh) ? '' : (item.titleZh || ''),
     prompt: item.prompt || '',
     promptZh: item.promptZh || '',
   };
-  const systemText = 'You are a strict translation engine for an AI prompt gallery. Translate only the text provided by the user. Do not invent new concepts, do not summarize, and never output placeholders such as Title or Prompt goes here. Preserve URLs, @handles, model names, brand/product names, and line breaks. Empty input fields must stay empty. Return JSON only.';
-  const userText = 'Translate ' + directionText + '. If direction is zhToEn, translate titleZh into title and promptZh into prompt, while keeping titleZh and promptZh unchanged. If direction is enToZh, translate title into titleZh and prompt into promptZh, while keeping title and prompt unchanged. Keep empty fields empty. Return exactly these keys: title, titleZh, prompt, promptZh. Input JSON:\n' + JSON.stringify(payload);
+  const systemText = 'You are a strict translation engine for an AI prompt gallery. Translate only the text provided by the user. Do not invent new concepts, do not summarize, and never output placeholders such as Title, Unknown, or Prompt goes here. Preserve URLs, @handles, model names, brand/product names, markdown, and line breaks. Empty input fields must stay empty. Return JSON only.';
+  const userText = 'Translate ' + directionText + '. Fill each missing counterpart independently: if titleZh exists and title is empty, translate titleZh into English title; if title exists and titleZh is empty, translate title into Simplified Chinese titleZh; if promptZh exists and prompt is empty, translate promptZh into English prompt; if prompt exists and promptZh is empty, translate prompt into Simplified Chinese promptZh. Already-filled fields must be copied unchanged. English fields must contain no Chinese characters unless the source intentionally includes bilingual labels. Chinese fields should be Simplified Chinese. Keep empty source fields empty. Return exactly these keys: title, titleZh, prompt, promptZh. Input JSON:\n' + JSON.stringify(payload);
   return { direction, systemText, userText };
 }
 
+function hasCjk(value) {
+  return /[\u3400-\u9fff]/.test(String(value || ''));
+}
+
+function isPlaceholder(value) {
+  return /^(untitled|title|unknown|unknown title|prompt|prompt goes here|n\/a|null|none)$/i.test(String(value || '').trim());
+}
+
+function isMeaningfulCandidate(value, sourceValue) {
+  const candidate = String(value || '').trim();
+  if (!candidate || isPlaceholder(candidate)) return false;
+  const source = String(sourceValue || '').trim();
+  if (source && candidate === source) return false;
+  return true;
+}
+
 function mergeTranslation(item, direction, translated) {
+  const sourceTitle = isPlaceholder(item.title) ? '' : String(item.title || '').trim();
+  const sourceTitleZh = isPlaceholder(item.titleZh) ? '' : String(item.titleZh || '').trim();
+  const allowEnglish = direction === 'zhToEn' || direction === 'mixed';
+  const allowChinese = direction === 'enToZh' || direction === 'mixed';
   const output = {
-    title: String(item.title || '').trim(),
-    titleZh: String(item.titleZh || '').trim(),
+    title: hasCjk(sourceTitle) ? '' : sourceTitle,
+    titleZh: hasCjk(sourceTitleZh) ? sourceTitleZh : '',
     prompt: String(item.prompt || '').trim(),
     promptZh: String(item.promptZh || '').trim(),
   };
+  const warnings = [];
 
-  if (direction === 'enToZh') {
-    output.titleZh = String(translated.titleZh || translated.title || output.titleZh).trim();
-    output.promptZh = String(translated.promptZh || translated.prompt || output.promptZh).trim();
-  } else {
-    output.title = String(translated.title || translated.titleZh || output.title).trim();
-    output.prompt = String(translated.prompt || translated.promptZh || output.prompt).trim();
+  if (allowChinese) {
+    const titleZh = String(translated.titleZh || translated.title || '').trim();
+    const promptZh = String(translated.promptZh || translated.prompt || '').trim();
+    if (sourceTitle && isMeaningfulCandidate(titleZh, sourceTitleZh) && hasCjk(titleZh)) {
+      output.titleZh = titleZh;
+    } else if (sourceTitle && !sourceTitleZh) {
+      warnings.push('Chinese title was not updated because the model did not return clear Chinese.');
+    }
+    if (item.prompt && isMeaningfulCandidate(promptZh, item.promptZh) && promptZh !== String(item.prompt || '').trim() && (hasCjk(promptZh) || !item.prompt)) {
+      output.promptZh = promptZh;
+    } else if (item.prompt && !item.promptZh) {
+      warnings.push('Chinese prompt was not updated because the model output looked unchanged or not Chinese.');
+    }
   }
 
-  return output;
+  if (allowEnglish) {
+    const title = String(translated.title || translated.titleZh || '').trim();
+    const prompt = String(translated.prompt || translated.promptZh || '').trim();
+    if (sourceTitleZh && isMeaningfulCandidate(title, sourceTitle) && !hasCjk(title)) {
+      output.title = title;
+    } else if (sourceTitleZh && !sourceTitle) {
+      warnings.push('English title was not updated because the model returned Chinese or placeholder text.');
+    }
+    if (item.promptZh && isMeaningfulCandidate(prompt, item.prompt) && prompt !== String(item.promptZh || '').trim()) {
+      output.prompt = prompt;
+    } else if (item.promptZh && !item.prompt) {
+      warnings.push('English prompt was not updated because the model output looked unchanged or still Chinese.');
+    }
+  }
+
+  return { item: output, warnings };
 }
 
 async function translateWithOpenAI(item, request, config) {
@@ -322,7 +371,7 @@ async function translateWithOpenAI(item, request, config) {
   }, body);
 
   const translated = parseJsonText(extractResponseText(data));
-  return { direction: request.direction, model: config.model, provider: 'openai', item: mergeTranslation(item, request.direction, translated) };
+  return { direction: request.direction, model: config.model, provider: 'openai', ...mergeTranslation(item, request.direction, translated) };
 }
 
 async function translateWithOllama(item, request, config) {
@@ -332,7 +381,10 @@ async function translateWithOllama(item, request, config) {
   const data = await requestJsonUrl(config.ollamaUrl + '/api/chat', {
     model,
     stream: false,
-    options: { temperature: 0.2 },
+    format: 'json',
+    think: false,
+    keep_alive: '10m',
+    options: { temperature: 0.1 },
     messages: [
       { role: 'system', content: request.systemText },
       { role: 'user', content: request.userText },
@@ -340,8 +392,90 @@ async function translateWithOllama(item, request, config) {
   });
 
   const text = data.message?.content || data.response || '';
-  const translated = parseJsonText(text);
-  return { direction: request.direction, model: 'Ollama - ' + model, provider: 'ollama', item: mergeTranslation(item, request.direction, translated) };
+  let translated = {};
+  let parseWarning = '';
+  try {
+    translated = parseJsonText(text);
+  } catch (error) {
+    parseWarning = 'Ollama did not return valid JSON, so only safe field-level fallback translation was applied.';
+  }
+  const merged = mergeTranslation(item, request.direction, translated);
+  if (parseWarning) merged.warnings.push(parseWarning);
+  await repairOllamaTitleTranslation(item, request.direction, config, merged);
+  await repairOllamaPromptTranslation(item, request.direction, config, merged);
+  return { direction: request.direction, model: 'Ollama - ' + model, provider: 'ollama', ...merged };
+}
+
+function cleanSimpleTranslation(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .replace(/^(translation|translated text)\s*:\s*/i, '')
+    .trim();
+}
+
+async function translateSimpleFieldWithOllama(value, targetLanguage, config) {
+  const model = String(config.ollamaModel || '').trim();
+  const data = await requestJsonUrl(config.ollamaUrl + '/api/chat', {
+    model,
+    stream: false,
+    think: false,
+    keep_alive: '10m',
+    options: { temperature: 0 },
+    messages: [
+      { role: 'system', content: 'You are a faithful translation engine. Output only the translated text, no explanation. Preserve markdown, XML tags, code-like tokens, URLs, phonetics, and line breaks.' },
+      { role: 'user', content: 'Translate to ' + targetLanguage + ': ' + value },
+    ],
+  });
+  return cleanSimpleTranslation(data.message?.content || data.response || '');
+}
+
+async function repairOllamaTitleTranslation(item, direction, config, merged) {
+  if ((direction === 'enToZh' || direction === 'mixed') && item.title && !hasCjk(merged.item.titleZh)) {
+    const titleZh = await translateSimpleFieldWithOllama(item.title, 'Simplified Chinese', config);
+    if (titleZh && hasCjk(titleZh)) {
+      merged.item.titleZh = titleZh;
+      merged.warnings = merged.warnings.filter(text => !text.startsWith('Chinese title'));
+    }
+  }
+  if ((direction === 'zhToEn' || direction === 'mixed') && item.titleZh && (!merged.item.title || isPlaceholder(merged.item.title) || hasCjk(merged.item.title))) {
+    const title = await translateSimpleFieldWithOllama(item.titleZh, 'English', config);
+    if (title && !hasCjk(title) && !isPlaceholder(title)) {
+      merged.item.title = title;
+      merged.warnings = merged.warnings.filter(text => !text.startsWith('English title'));
+    }
+  }
+}
+
+function removeWarningPrefix(warnings, prefix) {
+  return warnings.filter(text => !text.startsWith(prefix));
+}
+
+async function repairOllamaPromptTranslation(item, direction, config, merged) {
+  if ((direction === 'enToZh' || direction === 'mixed') && item.prompt) {
+    const source = String(item.prompt || '').trim();
+    const current = String(merged.item.promptZh || '').trim();
+    const needsRepair = !current || current === source || merged.warnings.some(text => text.startsWith('Chinese prompt'));
+    if (needsRepair) {
+      const promptZh = await translateSimpleFieldWithOllama(source, 'Simplified Chinese. Keep markdown, XML tags, code-like tokens, phonetics, and bracketed meanings when appropriate', config);
+      if (promptZh && promptZh !== source && hasCjk(promptZh)) {
+        merged.item.promptZh = promptZh;
+        merged.warnings = removeWarningPrefix(merged.warnings, 'Chinese prompt');
+      }
+    }
+  }
+  if ((direction === 'zhToEn' || direction === 'mixed') && item.promptZh) {
+    const source = String(item.promptZh || '').trim();
+    const current = String(merged.item.prompt || '').trim();
+    const needsRepair = !current || current === source || merged.warnings.some(text => text.startsWith('English prompt'));
+    if (needsRepair) {
+      const prompt = await translateSimpleFieldWithOllama(source, 'English. Keep markdown, XML tags, code-like tokens, phonetics, and bracketed Chinese meanings when appropriate', config);
+      if (prompt && prompt !== source && !isPlaceholder(prompt)) {
+        merged.item.prompt = prompt;
+        merged.warnings = removeWarningPrefix(merged.warnings, 'English prompt');
+      }
+    }
+  }
 }
 
 async function translatePromptItem(item, requestedDirection) {
@@ -604,7 +738,9 @@ async function handleApi(req, res, url) {
     const duplicate = prompts.find(p => p.id === item.id && (!existing || p !== existing));
     if (duplicate) item.id = `${item.id}-${Date.now().toString(36)}`;
 
-    const nextPrompts = existingIndex >= 0 ? prompts.map(p => p.id === existing.id ? item : p) : [item, ...prompts];
+    const nextPrompts = existingIndex >= 0
+      ? [item, ...prompts.filter(p => p.id !== existing.id)]
+      : [item, ...prompts];
     if (replacedImage) removeLocalImageIfUnused(replacedImage, nextPrompts);
 
     writePromptStores(nextPrompts);
