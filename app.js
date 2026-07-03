@@ -247,7 +247,7 @@
   }
 
   function goToPage(page) {
-    const nextPage = Math.min(Math.max(Number(page) || 1, 1), TOTAL_PAGES);
+    const nextPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
     if (nextPage === currentPage) return;
 
     currentPage = nextPage;
@@ -379,4 +379,3 @@
 
   render();
 })();
-

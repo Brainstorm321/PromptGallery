@@ -223,7 +223,7 @@
 
     if (titleEl) titleEl.textContent = title;
     if (authorEl) authorEl.textContent = author;
-    if (metaEl) metaEl.textContent = term("type", type) + " ? " + categoryLabel(item);
+    if (metaEl) metaEl.textContent = term("type", type) + ", " + categoryLabel(item);
     if (tagsEl) tagsEl.innerHTML = tags.map(t => `<span class="tag">${term("tag", t)}</span>`).join("");
     if (imgEl) { imgEl.src = item.image || ""; imgEl.alt = title; }
     if (promptEl) promptEl.value = displayText;
