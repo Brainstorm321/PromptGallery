@@ -443,7 +443,7 @@
       const data = await api('/api/prompts');
       prompts = data.prompts || [];
       categories = data.categories || [];
-      tagOptions = uniqueValues([...categories, 'x.com', 'x-twitter', 'Gemini', 'ChatGPT', 'Gems', 'GPTs', 'brand-visual', 'cover', 'business-card']);
+      tagOptions = uniqueValues([...categories, 'x.com', 'Gemini', 'ChatGPT', 'Gems', 'GPTs', 'PPT', 'Word-card', 'Recipe', 'Anatomical Atlas', 'brand-visual', 'cover', 'business-card']);
       renderChoiceGroup('categoryChoices', 'category', categories);
       renderChoiceGroup('tagChoices', 'tags', tagOptions);
       $('access').innerHTML = (data.access || ['Free','Premium']).map(optionHTML).join('');
