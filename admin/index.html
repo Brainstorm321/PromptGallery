@@ -232,6 +232,54 @@
       border: 0;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(2, 6, 23, .72);
+      backdrop-filter: blur(10px);
+    }
+    .modal-backdrop[hidden] { display: none; }
+    .settings-modal {
+      width: min(680px, 100%);
+      max-height: min(760px, calc(100vh - 36px));
+      overflow: auto;
+      border: 1px solid rgba(148, 163, 184, .28);
+      border-radius: 20px;
+      background: #101b2a;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .45);
+    }
+    .modal-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(15, 23, 42, .76);
+    }
+    .modal-titlebar h2 { margin: 0; font-size: 20px; }
+    .modal-body { display: grid; gap: 16px; padding: 20px; }
+    .modal-section {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: 14px;
+      background: rgba(15, 23, 42, .42);
+    }
+    .modal-section[hidden] { display: none; }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 20px 20px;
+    }
+
     @media (max-width: 880px) {
       .app-shell { padding: 16px; }
       .topbar, .actions { align-items: stretch; flex-direction: column; }
@@ -373,6 +421,68 @@
     </section>
   </main>
 
+  <div class="modal-backdrop" id="translationModal" hidden>
+    <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="translationModalTitle">
+      <div class="modal-titlebar">
+        <h2 id="translationModalTitle">翻译设置</h2>
+        <button class="btn ghost" id="closeTranslationSettingsBtn" type="button">关闭</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="translationProvider">翻译来源</label>
+          <select id="translationProvider">
+            <option value="ollama">本地 Ollama（免费）</option>
+            <option value="openai">OpenAI API（备用）</option>
+            <option value="off">关闭自动翻译</option>
+          </select>
+        </div>
+
+        <div class="modal-section" id="ollamaSettings">
+          <div class="field">
+            <label for="ollamaModelSelect">Ollama 已安装模型</label>
+            <select id="ollamaModelSelect">
+              <option value="">正在读取模型...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ollamaModelInput">Ollama 模型名</label>
+            <input id="ollamaModelInput" placeholder="qwen2:7b" />
+            <div class="hint">如果新模型刚下载完成，点“刷新模型列表”；也可以直接输入模型名，例如 qwen3.6。</div>
+          </div>
+          <div class="field">
+            <label for="ollamaUrlInput">Ollama URL</label>
+            <input id="ollamaUrlInput" placeholder="http://127.0.0.1:11434" />
+          </div>
+          <button class="btn ghost" id="refreshOllamaModelsBtn" type="button">刷新模型列表</button>
+        </div>
+
+        <div class="modal-section" id="openAISettings" hidden>
+          <div class="field">
+            <label for="openAIModelSelect">OpenAI 翻译模型</label>
+            <select id="openAIModelSelect">
+              <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+              <option value="gpt-4.1">gpt-4.1</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="openAIModelInput">OpenAI 模型名</label>
+            <input id="openAIModelInput" placeholder="gpt-4.1-mini" />
+          </div>
+          <div class="field">
+            <label for="openAIKeyInput">OpenAI API Key</label>
+            <input id="openAIKeyInput" type="password" placeholder="留空会清除本地 Key" autocomplete="off" />
+            <div class="hint">Key 只保存在这台电脑的本地设置文件里，不会上传 GitHub。</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="cancelTranslationSettingsBtn" type="button">取消</button>
+        <button class="btn primary" id="saveTranslationSettingsBtn" type="button">保存设置</button>
+      </div>
+    </section>
+  </div>
+
   <script>
     const $ = id => document.getElementById(id);
     const fields = ['id','title','titleZh','author','category','type','access','tags','image','originalUrl','prompt','promptZh'];
@@ -382,6 +492,7 @@
     let selectedImageFile = null;
     let previewObjectUrl = '';
     let translationSettings = { provider: 'ollama', hasOpenAIKey: false, model: 'gpt-4.1-mini', ollamaModel: 'qwen2:7b', ollamaUrl: 'http://127.0.0.1:11434' };
+    let ollamaModels = [];
     let tagOptions = [];
     let listAccessFilter = 'all';
 
@@ -580,6 +691,81 @@
       }
     }
 
+
+    function syncTranslationProviderSections() {
+      const provider = normalizeProvider($('translationProvider').value);
+      $('ollamaSettings').hidden = provider !== 'ollama';
+      $('openAISettings').hidden = provider !== 'openai';
+    }
+
+    function renderOllamaModelSelect() {
+      const select = $('ollamaModelSelect');
+      const current = ($('ollamaModelInput').value || translationSettings.ollamaModel || 'qwen2:7b').trim();
+      const values = uniqueValues([current, ...ollamaModels]);
+      select.innerHTML = values.length
+        ? values.map(optionHTML).join('')
+        : '<option value="">No local models found</option>';
+      select.value = values.includes(current) ? current : '';
+    }
+
+    async function loadOllamaModels(showMessage = false) {
+      try {
+        const data = await api('/api/ollama/models');
+        ollamaModels = data.models || [];
+        renderOllamaModelSelect();
+        if (showMessage) setStatus(ollamaModels.length ? '\u5df2\u5237\u65b0 Ollama \u6a21\u578b\u5217\u8868\u3002' : '\u6ca1\u6709\u8bfb\u5230 Ollama \u6a21\u578b\u3002\u8bf7\u786e\u8ba4 Ollama \u5df2\u542f\u52a8\u3002');
+      } catch (error) {
+        ollamaModels = [];
+        renderOllamaModelSelect();
+        setStatus('Ollama \u6a21\u578b\u5217\u8868\u8bfb\u53d6\u5931\u8d25\uff1a' + error.message);
+      }
+    }
+
+    async function openTranslationSettingsModal() {
+      await loadSettings();
+      $('translationProvider').value = normalizeProvider(translationSettings.provider);
+      $('ollamaModelInput').value = translationSettings.ollamaModel || 'qwen2:7b';
+      $('ollamaUrlInput').value = translationSettings.ollamaUrl || 'http://127.0.0.1:11434';
+      $('openAIModelInput').value = translationSettings.model || 'gpt-4.1-mini';
+      $('openAIModelSelect').value = ['gpt-4.1-mini', 'gpt-4.1', 'gpt-4o-mini'].includes(translationSettings.model) ? translationSettings.model : 'gpt-4.1-mini';
+      $('openAIKeyInput').value = '';
+      $('translationModal').hidden = false;
+      syncTranslationProviderSections();
+      renderOllamaModelSelect();
+      await loadOllamaModels(false);
+    }
+
+    function closeTranslationSettingsModal() {
+      $('translationModal').hidden = true;
+    }
+
+    async function saveTranslationSettings() {
+      const provider = normalizeProvider($('translationProvider').value);
+      const payload = { provider };
+      if (provider === 'ollama') {
+        payload.ollamaModel = ($('ollamaModelInput').value || $('ollamaModelSelect').value || 'qwen2:7b').trim();
+        payload.ollamaUrl = ($('ollamaUrlInput').value || 'http://127.0.0.1:11434').trim();
+      }
+      if (provider === 'openai') {
+        payload.openAIModel = ($('openAIModelInput').value || $('openAIModelSelect').value || 'gpt-4.1-mini').trim();
+        const key = $('openAIKeyInput').value.trim();
+        if (key) payload.openAIKey = key === 'CLEAR' ? '' : key;
+      }
+      try {
+        $('saveTranslationSettingsBtn').disabled = true;
+        translationSettings = { ...translationSettings, ...(await api('/api/settings', { method: 'POST', body: JSON.stringify(payload) })) };
+        renderTranslationBadge();
+        closeTranslationSettingsModal();
+        if (provider === 'ollama') setStatus('\u5df2\u4fdd\u5b58\u672c\u5730 Ollama \u7ffb\u8bd1\u8bbe\u7f6e\uff1a' + translationSettings.ollamaModel);
+        else if (provider === 'openai') setStatus('\u5df2\u4fdd\u5b58 OpenAI \u7ffb\u8bd1\u8bbe\u7f6e\u3002Key \u4ec5\u4fdd\u5b58\u5728\u672c\u5730\u7535\u8111\u3002');
+        else setStatus('\u5df2\u5173\u95ed\u81ea\u52a8\u7ffb\u8bd1\u3002');
+      } catch (error) {
+        setStatus('\u4fdd\u5b58\u7ffb\u8bd1\u8bbe\u7f6e\u5931\u8d25\uff1a' + error.message);
+      } finally {
+        $('saveTranslationSettingsBtn').disabled = false;
+      }
+    }
+
     function translationDirection(item) {
       const needsEn = !!((item.titleZh && !item.title) || (item.promptZh && !item.prompt));
       const needsZh = !!((item.title && !item.titleZh) || (item.prompt && !item.promptZh));
@@ -723,42 +909,20 @@
         $('publishBtn').disabled = false;
       }
     });
-    $('settingsBtn').addEventListener('click', async () => {
-      const currentProvider = normalizeProvider(translationSettings.provider);
-      const providerInput = prompt('\u7ffb\u8bd1\u6765\u6e90\uff1aollama / openai / off', currentProvider);
-      if (providerInput === null) return;
-      const provider = normalizeProvider(providerInput);
-      const payload = { provider };
-
-      if (provider === 'ollama') {
-        const currentModel = translationSettings.ollamaModel || 'qwen2:7b';
-        const currentUrl = translationSettings.ollamaUrl || 'http://127.0.0.1:11434';
-        const ollamaModel = prompt('Ollama model', currentModel);
-        if (ollamaModel === null) return;
-        const ollamaUrl = prompt('Ollama URL', currentUrl);
-        if (ollamaUrl === null) return;
-        payload.ollamaModel = ollamaModel.trim() || currentModel;
-        payload.ollamaUrl = ollamaUrl.trim() || currentUrl;
-      }
-
-      if (provider === 'openai') {
-        const currentModel = translationSettings.model || 'gpt-4.1-mini';
-        const key = prompt('\u8bf7\u8f93\u5165 OpenAI API Key\u3002\u7559\u7a7a\u4f1a\u6e05\u9664\u672c\u5730\u4fdd\u5b58\u7684 Key\u3002', '');
-        if (key === null) return;
-        const model = prompt('\u7ffb\u8bd1\u6a21\u578b', currentModel) || currentModel;
-        payload.openAIKey = key.trim();
-        payload.openAIModel = model.trim() || currentModel;
-      }
-
-      try {
-        translationSettings = { ...translationSettings, ...(await api('/api/settings', { method: 'POST', body: JSON.stringify(payload) })) };
-        renderTranslationBadge();
-        if (provider === 'ollama') setStatus('\u5df2\u5207\u6362\u5230\u672c\u5730 Ollama \u7ffb\u8bd1\u3002\u8bf7\u786e\u8ba4 Ollama \u5df2\u542f\u52a8\uff0c\u5e76\u5df2\u4e0b\u8f7d\u8be5\u6a21\u578b\u3002');
-        else if (provider === 'openai') setStatus(translationSettings.hasOpenAIKey ? '\u7ffb\u8bd1 Key \u5df2\u4fdd\u5b58\u5230\u672c\u5730\u7535\u8111\uff0c\u4e0d\u4f1a\u4e0a\u4f20 GitHub\u3002' : '\u5df2\u5207\u6362\u5230 OpenAI\uff0c\u4f46\u672a\u8bbe\u7f6e Key\u3002');
-        else setStatus('\u5df2\u5173\u95ed\u81ea\u52a8\u7ffb\u8bd1\u3002');
-      } catch (error) {
-        setStatus('\u4fdd\u5b58\u7ffb\u8bd1\u8bbe\u7f6e\u5931\u8d25\uff1a' + error.message);
-      }
+    $('settingsBtn').addEventListener('click', openTranslationSettingsModal);
+    $('closeTranslationSettingsBtn').addEventListener('click', closeTranslationSettingsModal);
+    $('cancelTranslationSettingsBtn').addEventListener('click', closeTranslationSettingsModal);
+    $('saveTranslationSettingsBtn').addEventListener('click', saveTranslationSettings);
+    $('refreshOllamaModelsBtn').addEventListener('click', () => loadOllamaModels(true));
+    $('translationProvider').addEventListener('change', syncTranslationProviderSections);
+    $('ollamaModelSelect').addEventListener('change', () => {
+      if ($('ollamaModelSelect').value) $('ollamaModelInput').value = $('ollamaModelSelect').value;
+    });
+    $('openAIModelSelect').addEventListener('change', () => {
+      if ($('openAIModelSelect').value) $('openAIModelInput').value = $('openAIModelSelect').value;
+    });
+    $('translationModal').addEventListener('click', event => {
+      if (event.target === $('translationModal')) closeTranslationSettingsModal();
     });
 
     $('translateBtn').addEventListener('click', async () => {

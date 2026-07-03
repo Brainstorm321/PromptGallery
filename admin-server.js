@@ -177,6 +177,41 @@ function requestJsonUrl(endpoint, body) {
   });
 }
 
+function getJsonUrl(endpoint) {
+  return new Promise((resolve, reject) => {
+    let url;
+    try {
+      url = new URL(endpoint);
+    } catch (error) {
+      reject(new Error(`Invalid request URL: ${endpoint}`));
+      return;
+    }
+    const transport = url.protocol === 'https:' ? https : http;
+    const req = transport.request({
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: `${url.pathname}${url.search}`,
+      method: 'GET',
+    }, res => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (error) { data = { raw: text }; }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(data.error?.message || data.message || text || `HTTP ${res.statusCode}`));
+          return;
+        }
+        resolve(data);
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => req.destroy(new Error('Local model list request timed out.')));
+    req.end();
+  });
+}
+
 function extractResponseText(data) {
   if (typeof data.output_text === 'string') return data.output_text;
   const parts = [];
@@ -524,16 +559,27 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === 'GET' && url.pathname === '/api/ollama/models') {
+    const config = getTranslationConfig();
+    const data = await getJsonUrl(`${config.ollamaUrl}/api/tags`);
+    const models = (data.models || []).map(model => model.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    send(res, 200, { ok: true, models });
+    return;
+  }
+
   if (req.method === 'POST' && url.pathname === '/api/settings') {
     const payload = await readBodyJson(req);
     const provider = normalizeTranslationProvider(payload.provider);
-    writeSecrets({
+    const nextSecrets = {
       TRANSLATION_PROVIDER: provider,
-      OPENAI_API_KEY: String(payload.openAIKey || '').trim(),
       OPENAI_TRANSLATION_MODEL: String(payload.openAIModel || payload.model || '').trim() || DEFAULT_OPENAI_TRANSLATION_MODEL,
       OLLAMA_TRANSLATION_MODEL: String(payload.ollamaModel || '').trim() || DEFAULT_OLLAMA_MODEL,
       OLLAMA_BASE_URL: String(payload.ollamaUrl || '').trim() || DEFAULT_OLLAMA_URL,
-    });
+    };
+    if (Object.prototype.hasOwnProperty.call(payload, 'openAIKey')) {
+      nextSecrets.OPENAI_API_KEY = String(payload.openAIKey || '').trim();
+    }
+    writeSecrets(nextSecrets);
     send(res, 200, { ok: true, ...publicTranslationConfig() });
     return;
   }
