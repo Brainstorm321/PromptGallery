@@ -1,6 +1,25 @@
 // prompts.js - public prompt gallery data.
 window.PROMPTS = [
   {
+    "id": "advertisement-mr4n0d6r",
+    "title": "Advertisement",
+    "titleZh": "广告",
+    "author": "Brainstorming",
+    "category": [
+      "design",
+      "commercial"
+    ],
+    "type": "Image",
+    "tags": [
+      "design",
+      "Artistly"
+    ],
+    "image": "assets/images/advertisement-mr4n0d6q.webp",
+    "originalUrl": "",
+    "prompt": "A split-screen Meta ad showcasing digital fatigue versus visual relief. On the left, a tired professional stares into a harsh, blue-lit computer monitor. On the right, a warm, forest-green sanctuary frames a laptop displaying the 'EyeRest Daily' web platform with its cute Mobobo plant mascot. Soft, natural sunbeams filter through leaves, casting a gentle glow. Bold, modern sans-serif typography at the top reads, 'Screen Fatigue? Reset in 60 Seconds' in clean white, with a supportive subheadline below reading, 'Science-backed visual breaks at EyeRestDaily.com' in soft sage green. The mood is instantly calming, transitions from stressful cool tones to restorative earthy greens and warm whites, and visually connects screen-time relief with nature.",
+    "promptZh": "一则分屏 Meta 广告，展示数字疲劳与视觉舒缓的对比。左侧，一位疲惫的专业人士凝视着刺眼的蓝光电脑显示器。右侧，一个温暖的森林绿色庇护所框住了一台笔记本电脑，屏幕上显示着带有可爱 Mobobo 植物吉祥物的“EyeRest Daily”网络平台。柔和的自然阳光透过树叶洒下，投下温柔的光辉。顶部采用粗体现代无衬线字体，以干净的白色写着“屏幕疲劳？60秒重置”，下方辅以柔和鼠尾草绿色的副标题：“基于科学的视觉休息，尽在 EyeRestDaily.com”。氛围瞬间令人平静，从紧张的冷色调过渡到恢复活力的泥土绿和暖白色，并在视觉上将屏幕时间缓解与自然联系起来。"
+  },
+  {
     "id": "advertisement",
     "title": "Advertisement",
     "titleZh": "广告",
