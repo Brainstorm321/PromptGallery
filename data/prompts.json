@@ -1,5 +1,21 @@
 [
   {
+    "id": "prompt-msxo9dql",
+    "title": "Untitled",
+    "titleZh": "人物肖像",
+    "author": "Alina Ai  @Alina_with_Ai",
+    "category": "portrait",
+    "type": "Image",
+    "access": "Free",
+    "tags": [
+      "portrait",
+      "x.com"
+    ],
+    "image": "assets/images/untitled-msxo9dqm.webp",
+    "originalUrl": "https://x.com/Alina_with_Ai/status/2089172916202291547?s=20",
+    "prompt": "Create an ultra-realistic editorial portrait using the uploaded photo as the exact reference for the person. Preserve her facial identity, facial features, hairstyle, skin tone, body proportions, clothing, accessories, and pose accurately.\n\nCreate a creative split-style composition where the real woman stands naturally beside a highly detailed hand-drawn pencil sketch version of herself. The sketch must accurately replicate the exact same person, hairstyle, headphones, outfit, phone, handbag, pose, and body proportions.\n\nThe real woman is wearing large over-ear headphones, a fitted white sleeveless crop top, loose white wide-leg pants, and white sneakers. She carries a small black shoulder bag and holds a smartphone while looking down at it. Her other arm is raised above her head in a relaxed, joyful pose, with one leg bent upward.\n\nPlace the real person against a clean light gray/beige wall with a smooth gray floor. Beside her, make the sketch appear as if it has been hand-drawn directly onto the wall. Use realistic graphite pencil strokes, fine cross-hatching, delicate linework, detailed shading, subtle imperfections, and an authentic fashion-sketch aesthetic.\n\nAdd small hand-drawn doodles around the sketch, including hearts, stars, short motion lines, and minimal artistic marks.\n\nAdd a small rounded Polaroid-style inset image near the bottom-left corner showing the complete original composition, with a clean white border and slight tilt.\n\nUse soft natural daylight, realistic skin texture, authentic fabric details, subtle shadows, warm neutral tones, minimalist fashion editorial styling, cinematic composition, seamless photo-to-sketch integration, ultra-detailed, photorealistic, premium creative campaign aesthetic, 4K quality.\n\nImportant: Preserve the person’s exact identity and appearance from the uploaded reference. Do not distort the face, hands, body, clothing, headphones, phone, or proportions. No extra people, no unwanted text, no logos, no watermark."
+  },
+  {
     "id": "prompt-msxntmrv",
     "title": "Untitled",
     "titleZh": "人物肖像",
