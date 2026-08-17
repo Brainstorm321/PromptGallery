@@ -10,40 +10,42 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600&amp;display=swap" rel="stylesheet"/>
-<link href="css/style.css?v=20260703-014031" rel="stylesheet"/>
+<link href="css/style.css?v=20260817-125826" rel="stylesheet"/>
 <style>
   .hero-neon {
     isolation: isolate;
     background:
-      radial-gradient(ellipse at 18% 86%, rgba(8, 145, 178, 0.34), transparent 34%),
-      radial-gradient(ellipse at 86% 22%, rgba(124, 58, 237, 0.28), transparent 36%),
-      radial-gradient(ellipse at 48% 52%, rgba(37, 99, 235, 0.18), transparent 46%),
-      linear-gradient(135deg, #020817 0%, #071832 42%, #1c123d 100%);
+      linear-gradient(180deg, rgba(2, 6, 23, 0.28) 0%, rgba(2, 6, 23, 0.08) 42%, rgba(2, 6, 23, 0.5) 100%),
+      radial-gradient(ellipse at 50% 24%, rgba(37, 99, 235, 0.18), transparent 48%),
+      url("assets/images/hero-starlight-bg.png?v=20260725-hero-starlight") center bottom / cover no-repeat,
+      #020817;
   }
 
   .hero-aurora {
     background:
-      radial-gradient(ellipse at 20% 78%, rgba(14, 165, 233, 0.2), transparent 38%),
-      radial-gradient(ellipse at 76% 72%, rgba(99, 102, 241, 0.22), transparent 42%),
-      radial-gradient(ellipse at 54% 16%, rgba(168, 85, 247, 0.14), transparent 34%);
+      radial-gradient(ellipse at 30% 18%, rgba(59, 130, 246, 0.18), transparent 36%),
+      radial-gradient(ellipse at 78% 22%, rgba(124, 58, 237, 0.16), transparent 34%),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.32), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.36));
     animation: heroAuroraBreathe 16s ease-in-out infinite alternate;
   }
 
   .hero-starfield {
     background:
-      radial-gradient(circle at 9% 22%, rgba(191, 219, 254, 0.86) 0 1px, transparent 2px),
-      radial-gradient(circle at 18% 63%, rgba(56, 189, 248, 0.72) 0 1.6px, transparent 3.6px),
-      radial-gradient(circle at 31% 18%, rgba(255, 255, 255, 0.72) 0 0.8px, transparent 2px),
-      radial-gradient(circle at 46% 74%, rgba(147, 197, 253, 0.76) 0 2.2px, transparent 4.8px),
-      radial-gradient(circle at 61% 24%, rgba(216, 180, 254, 0.78) 0 1.3px, transparent 3.2px),
-      radial-gradient(circle at 73% 58%, rgba(125, 211, 252, 0.86) 0 0.9px, transparent 2.4px),
-      radial-gradient(circle at 88% 30%, rgba(255, 255, 255, 0.78) 0 1.8px, transparent 4px),
-      radial-gradient(circle at 82% 66%, rgba(96, 165, 250, 0.7) 0 2.8px, transparent 6px);
-    animation: heroStarfieldTwinkle 6s ease-in-out infinite alternate;
+      radial-gradient(circle at 22px 48px, rgba(255, 255, 255, 0.9) 0 1px, transparent 2px),
+      radial-gradient(circle at 88px 112px, rgba(56, 189, 248, 0.86) 0 1.4px, transparent 3.2px),
+      radial-gradient(circle at 148px 72px, rgba(167, 139, 250, 0.78) 0 1.2px, transparent 3px),
+      radial-gradient(circle at 210px 34px, rgba(125, 211, 252, 0.72) 0 0.8px, transparent 2.4px);
+    background-size: 240px 180px, 340px 260px, 460px 320px, 620px 420px;
+    mix-blend-mode: screen;
+    opacity: 0.58;
+    animation:
+      heroStarfieldDrift 28s linear infinite,
+      heroStarfieldTwinkle 5.8s ease-in-out infinite alternate;
   }
 
   .hero-wave-svg {
-    opacity: 0.96;
+    display: none;
+    opacity: 0;
     mix-blend-mode: screen;
   }
 
@@ -117,8 +119,14 @@
   }
 
   @keyframes heroStarfieldTwinkle {
-    from { opacity: 0.34; transform: translate3d(0, 0, 0); }
-    to { opacity: 0.82; transform: translate3d(0, -8px, 0); }
+    from { opacity: 0.32; }
+    50% { opacity: 0.84; }
+    to { opacity: 0.5; }
+  }
+
+  @keyframes heroStarfieldDrift {
+    from { background-position: 0 0, 0 0, 0 0, 0 0; }
+    to { background-position: 240px -180px, -340px 260px, 230px -320px, -310px 420px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -368,6 +376,14 @@
 <option selected="" value="all">All</option>
 <option value="image">Image</option>
 <option value="video">Video</option>
+<option value="ppt">PPT</option>
+<option value="podcast">Podcast</option>
+<option value="audio">Audio</option>
+<option value="article">Article</option>
+<option value="social post">Social Post</option>
+<option value="website">Website</option>
+<option value="workflow">Workflow</option>
+<option value="tool">Tool</option>
 </select>
 </div>
 </div>
@@ -394,7 +410,9 @@ Back to Page 1
                     "title": { "type": "Text", "description": "Prompt's curated title, used for card main title display" },
                     "thumbnail": { "type": "Image", "description": "Card main visual, used for Gallery Grid" },
                     "tags": { "type": "Multi-select / Array", "options": ["abstract", "nature", "fantasy", "sci-fi", "portraits", "minimalist", "tech", "urban", "art-style", "character-design"], "description": "3-4 lowercase, kebab-case tags" },
-                    "type": { "type": "Select", "options": ["image", "video", "workflow", "tutorial", "commercial"] }
+                    "type": { "type": "Select", "options": ["image", "video", "ppt", "podcast", "audio", "article", "social post", "website", "workflow", "tool", "custom"] },
+                    "originalUrl": { "type": "URL", "description": "Source page or original GPT/Gem link" },
+                    "googleDriveUrl": { "type": "URL", "description": "Google Drive link for long instructions" }
                 }
             }
         </script>
@@ -500,4 +518,4 @@ Back to Page 1
 </div>
 </div>
 </footer>
-<script src="prompts.js?v=20260703-031500"></script><script src="i18n.js?v=20260703-031500"></script><script src="app.js?v=20260703-031500"></script></body></html>
+<script src="prompts.js?v=20260817-125826"></script><script src="i18n.js?v=20260817-125826"></script><script src="app.js?v=20260817-125826"></script></body></html>
