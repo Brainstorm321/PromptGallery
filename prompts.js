@@ -1,6 +1,21 @@
 // prompts.js - public prompt gallery data.
 window.PROMPTS = [
   {
+    "id": "prompt-msxo9dql",
+    "title": "Portrait",
+    "titleZh": "人物肖像",
+    "author": "Alina Ai  @Alina_with_Ai",
+    "category": "portrait",
+    "type": "Image",
+    "tags": [
+      "portrait",
+      "x.com"
+    ],
+    "image": "assets/images/untitled-msxo9dqm.webp",
+    "originalUrl": "https://x.com/Alina_with_Ai/status/2089172916202291547?s=20",
+    "prompt": "Create an ultra-realistic editorial portrait using the uploaded photo as the exact reference for the person. Preserve her facial identity, facial features, hairstyle, skin tone, body proportions, clothing, accessories, and pose accurately.\n\nCreate a creative split-style composition where the real woman stands naturally beside a highly detailed hand-drawn pencil sketch version of herself. The sketch must accurately replicate the exact same person, hairstyle, headphones, outfit, phone, handbag, pose, and body proportions.\n\nThe real woman is wearing large over-ear headphones, a fitted white sleeveless crop top, loose white wide-leg pants, and white sneakers. She carries a small black shoulder bag and holds a smartphone while looking down at it. Her other arm is raised above her head in a relaxed, joyful pose, with one leg bent upward.\n\nPlace the real person against a clean light gray/beige wall with a smooth gray floor. Beside her, make the sketch appear as if it has been hand-drawn directly onto the wall. Use realistic graphite pencil strokes, fine cross-hatching, delicate linework, detailed shading, subtle imperfections, and an authentic fashion-sketch aesthetic.\n\nAdd small hand-drawn doodles around the sketch, including hearts, stars, short motion lines, and minimal artistic marks.\n\nAdd a small rounded Polaroid-style inset image near the bottom-left corner showing the complete original composition, with a clean white border and slight tilt.\n\nUse soft natural daylight, realistic skin texture, authentic fabric details, subtle shadows, warm neutral tones, minimalist fashion editorial styling, cinematic composition, seamless photo-to-sketch integration, ultra-detailed, photorealistic, premium creative campaign aesthetic, 4K quality.\n\nImportant: Preserve the person’s exact identity and appearance from the uploaded reference. Do not distort the face, hands, body, clothing, headphones, phone, or proportions. No extra people, no unwanted text, no logos, no watermark."
+  },
+  {
     "id": "prompt-msxobuxw",
     "title": "Portrait",
     "titleZh": "人物肖像",
@@ -30,21 +45,6 @@ window.PROMPTS = [
     "originalUrl": "https://x.com/Alina_with_Ai/status/2089172904206541269?s=20",
     "prompt": "Create an ultra-realistic editorial portrait using the uploaded photo as the exact reference for the person. Preserve the person’s facial identity, facial features, hairstyle, skin tone, body proportions, clothing, accessories, and pose accurately.\n\nCreate a creative split-style composition where the real person is naturally positioned beside a highly detailed hand-drawn pencil sketch of the exact same person. The sketch must precisely replicate the person’s pose, hairstyle, sunglasses, outfit, shoes, bag, coffee cup, magazine, and body proportions.\n\nThe real person should look completely photorealistic with natural skin texture, realistic hair strands, authentic fabric details, soft natural lighting, subtle shadows, and cinematic depth. The sketch should be monochrome graphite/ink with fine pencil strokes, cross-hatching, realistic line variation, hand-drawn imperfections, and artistic shading.\n\nPlace the real person against a clean warm beige/cream wall in a minimalist fashion-editorial setting. Make the sketch appear as if it has been hand-drawn directly onto the wall beside the real person, perfectly aligned with the real pose.\n\nAdd small hand-drawn doodles around the sketch, including hearts, stars, motion lines, and subtle artistic marks. Include a small tilted Polaroid-style inset photo of the original person near the bottom-left corner with rounded white borders.\n\nMaintain a sophisticated fashion magazine aesthetic, warm neutral tones, soft daylight, realistic textures, balanced composition, premium editorial photography, ultra-detailed, cinematic, high-end creative campaign, 4K quality.\n\nImportant: Keep the person’s identity, face, pose, hands, body proportions, clothing, accessories, and hairstyle consistent with the uploaded reference. Do not distort the face or body. Do not add extra people. No unwanted text, logos, captions, or watermarks.",
     "promptZh": "使用上传的照片作为人物的精确参考，创作一幅超现实主义编辑肖像。准确保留人物的面部身份、面部特征、发型、肤色、身体比例、服装和姿势。\n\n将场景转变为创意分割式构图，让真实人物自然地出现在同一人物的详细手绘铅笔素描版本旁边。素描应准确匹配真实人物的姿势、服装、发型和整体外观，带有逼真的石墨铅笔笔触、精细的交叉阴影、松散的艺术线条，以及插图周围的微妙手写涂鸦。\n\n保持真实人物的照片级真实感，带有自然的皮肤纹理、逼真的光线、柔和的阴影和真实的服装细节。让真实照片与铅笔素描之间的过渡看起来无缝且富有艺术感，仿佛素描是直接画在人物旁边的墙上。\n\n在底部区域附近添加一张小而倾斜的宝丽来风格照片，展示原始人物，营造出创意AI艺术编辑布局。温暖的米色/奶油色背景，极简美学，柔和的自然光线，时尚杂志构图，精致创作者美学，高细节，电影摄影，逼真纹理，4K品质。\n\n不要扭曲面部、手部、身体、服装或比例。没有额外人物，没有多余文字，没有水印。"
-  },
-  {
-    "id": "prompt-msxo9dql",
-    "title": "Untitled",
-    "titleZh": "人物肖像",
-    "author": "Alina Ai  @Alina_with_Ai",
-    "category": "portrait",
-    "type": "Image",
-    "tags": [
-      "portrait",
-      "x.com"
-    ],
-    "image": "assets/images/untitled-msxo9dqm.webp",
-    "originalUrl": "https://x.com/Alina_with_Ai/status/2089172916202291547?s=20",
-    "prompt": "Create an ultra-realistic editorial portrait using the uploaded photo as the exact reference for the person. Preserve her facial identity, facial features, hairstyle, skin tone, body proportions, clothing, accessories, and pose accurately.\n\nCreate a creative split-style composition where the real woman stands naturally beside a highly detailed hand-drawn pencil sketch version of herself. The sketch must accurately replicate the exact same person, hairstyle, headphones, outfit, phone, handbag, pose, and body proportions.\n\nThe real woman is wearing large over-ear headphones, a fitted white sleeveless crop top, loose white wide-leg pants, and white sneakers. She carries a small black shoulder bag and holds a smartphone while looking down at it. Her other arm is raised above her head in a relaxed, joyful pose, with one leg bent upward.\n\nPlace the real person against a clean light gray/beige wall with a smooth gray floor. Beside her, make the sketch appear as if it has been hand-drawn directly onto the wall. Use realistic graphite pencil strokes, fine cross-hatching, delicate linework, detailed shading, subtle imperfections, and an authentic fashion-sketch aesthetic.\n\nAdd small hand-drawn doodles around the sketch, including hearts, stars, short motion lines, and minimal artistic marks.\n\nAdd a small rounded Polaroid-style inset image near the bottom-left corner showing the complete original composition, with a clean white border and slight tilt.\n\nUse soft natural daylight, realistic skin texture, authentic fabric details, subtle shadows, warm neutral tones, minimalist fashion editorial styling, cinematic composition, seamless photo-to-sketch integration, ultra-detailed, photorealistic, premium creative campaign aesthetic, 4K quality.\n\nImportant: Preserve the person’s exact identity and appearance from the uploaded reference. Do not distort the face, hands, body, clothing, headphones, phone, or proportions. No extra people, no unwanted text, no logos, no watermark."
   },
   {
     "id": "prompt-msxntmrv",
