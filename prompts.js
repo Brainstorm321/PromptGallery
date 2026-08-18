@@ -1,6 +1,21 @@
 // prompts.js - public prompt gallery data.
 window.PROMPTS = [
   {
+    "id": "paper-music-stage",
+    "title": "Paper Music Stage",
+    "titleZh": "纸上音乐舞台",
+    "author": "Xiao Yang  @XiaoKooeye",
+    "category": "design",
+    "type": "Image",
+    "tags": [
+      "design",
+      "tutorial"
+    ],
+    "image": "assets/images/paper-music-stage-msxwf14x.webp",
+    "originalUrl": "https://x.com/XiaoKooeye/status/2089000956256248042?s=20",
+    "prompt": "Create a highly detailed surreal 3D photorealistic scene on a large white spiral notebook lying on a wooden table. The notebook contains realistic black and white pencil sketches of a lively music stage that come alive in three-dimensional form. Show several identical young men interacting with the drawings: one is singing into a giant penciled microphone, one is climbing musical notes like stairs, one is conducting a drawn orchestra, one is sitting on a sketched grand piano, one is running away from a giant cartoon trumpet blast, one is dancing on a vinyl record drawn in pencil, one is relaxing under a paper spotlight drinking from a tiny cup, and one is lifting a large music sheet revealing tiny doodle musicians underneath. Keep the pencil drawings black and white, while the human figures remain photorealistic and naturally integrated into the notebook. Strong depth, realistic shadows, detailed pencil texture, cinematic lighting, whimsical fantasy, impossible perspective, highly realistic, vertical 9:16 composition."
+  },
+  {
     "id": "poster",
     "title": "Poster",
     "titleZh": "海报",
